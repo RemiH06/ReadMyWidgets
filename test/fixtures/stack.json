@@ -1,0 +1,10 @@
+{
+  "Lenguajes": ["Python", "TypeScript", "JavaScript", "Rust", "C#", "HTML", "Shell"],
+  "Web & Apps": [
+    "Three.js",
+    "Next.js",
+    { "name": "Contenedores", "icon": "docker" },
+    "una tecnología con un nombre larguísimo que no cabe ni sola en un renglón de la ficha",
+    "<script>alert(\"x\")</script> & \"comillas\""
+  ]
+}

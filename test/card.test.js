@@ -5,13 +5,15 @@ import { LAYOUTS, W } from '../src/card.js';
 import { generate } from '../src/cli.js';
 import { contrast } from '../src/color.js';
 import { iconColors } from '../src/icons.js';
-import { FIXTURE_REPOS, fixtureGet, fixtureIcon } from '../src/preview.js';
+import { FIXTURE_REPOS, FIXTURE_STACK, fixtureDeps, fixtureGet, fixtureIcon } from '../src/preview.js';
 import { parseRepo } from '../src/repo.js';
 import { measure } from '../src/text.js';
 
+// Las tres alturas de ficha y el bloque de stack pasan por las mismas pruebas por archivo.
 const byLayout = {};
 for (const layout of Object.keys(LAYOUTS))
-  byLayout[layout] = await generate(FIXTURE_REPOS, { get: fixtureGet, icon: fixtureIcon(), layout });
+  byLayout[layout] = (await generate({ repos: FIXTURE_REPOS, layout }, fixtureDeps())).files;
+byLayout.stack = (await generate({ stack: FIXTURE_STACK }, fixtureDeps())).files;
 const files = byLayout.card;
 const themeOf = (file) => file.match(/-(dark|light)\.svg$/)[1];
 const fills = (svg) => [...svg.matchAll(/<(?:rect|circle) [^>]*fill="(#[0-9a-f]{6})"/g)].map((m) => m[1]);
@@ -69,12 +71,12 @@ test('status opcional tras ":" en cualquier forma; uno desconocido falla y dice 
 });
 
 test('layout desconocido falla antes de pedir nada', async () => {
-  await assert.rejects(generate(['RemiH06/Ariadne'], { get: fixtureGet, layout: 'grid' }), /layout: "grid"/);
+  await assert.rejects(generate({ repos: ['RemiH06/Ariadne'], layout: 'grid' }, { get: fixtureGet }), /layout: "grid"/);
 });
 
 test('un repo que no existe falla con su nombre y no devuelve nada (RF-06)', async () => {
   await assert.rejects(
-    generate(['RemiH06/Ariadne', 'RemiH06/nope'], { get: fixtureGet, icon: fixtureIcon() }),
+    generate({ repos: ['RemiH06/Ariadne', 'RemiH06/nope'] }, fixtureDeps()),
     /RemiH06\/nope: no existe/,
   );
 });
@@ -96,7 +98,7 @@ for (const [layout, svg, file] of Object.entries(byLayout).flatMap(([l, fs]) => 
   const t = tokens.themes[themeOf(file)];
 
   test(`${file}: mide lo que dice su layout`, () => {
-    assert.match(svg, new RegExp(`viewBox="0 0 ${W} ${LAYOUTS[layout]}"`));
+    assert.match(svg, new RegExp(`viewBox="0 0 ${W} ${LAYOUTS[layout] ?? '\\d+'}"`));
   });
 
   test(`${file}: barra y puntos dan 3:1 sobre el fondo (RNF-03)`, () => {
@@ -143,6 +145,6 @@ test('el título largo se corta con … y la descripción en 2 líneas (RF-04)',
 });
 
 test('salida determinista: mismos datos, mismos bytes (RNF-04)', async () => {
-  const again = await generate(FIXTURE_REPOS, { get: fixtureGet, icon: fixtureIcon() });
-  assert.deepEqual(again, files);
+  const again = await generate({ repos: FIXTURE_REPOS, stack: FIXTURE_STACK }, fixtureDeps());
+  assert.deepEqual(again.files, new Map([...files, ...byLayout.stack]));
 });

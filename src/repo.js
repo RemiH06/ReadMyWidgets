@@ -46,6 +46,37 @@ export function parseRepo(input) {
   return { owner, name, status };
 }
 
+// Un input de lista: separado por comas o renglones, sin vacíos.
+export const list = (text) => String(text ?? '').split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+
+// `repo:status` por renglón o coma (para los repos de `pinned`, que no traen
+// status) → Map de `dueño/repo` o `repo`, en minúsculas, a token de color.
+export function parseStatus(entries) {
+  const map = new Map();
+  for (const raw of entries) {
+    const m = raw.match(/^([^:\s]+)\s*:\s*([^:]*)$/);
+    if (!m) throw new Error(`status: "${raw}" no es válido; usa repo:status, por ejemplo tanGo:activo`);
+    const status = STATUS[m[2].toLowerCase()];
+    if (!status) throw new Error(`status: "${m[2]}" no es un status (${Object.keys(STATUS).join(', ')})`);
+    map.set(m[1].toLowerCase(), status);
+  }
+  return map;
+}
+
+// Le da a cada repo sin status el que diga `status`; una entrada que no
+// corresponde a ningún repo falla (casi siempre es una errata).
+export function applyStatus(targets, map) {
+  const used = new Set();
+  const out = targets.map((r) => {
+    const k = [`${r.owner}/${r.name}`.toLowerCase(), r.name.toLowerCase()].find((x) => map.has(x));
+    if (k) used.add(k);
+    return r.status || !k ? r : { ...r, status: map.get(k) };
+  });
+  const unused = [...map.keys()].filter((k) => !used.has(k));
+  if (unused.length) throw new Error(`status: ${unused.map((k) => `"${k}"`).join(', ')} no está entre los repos`);
+  return out;
+}
+
 // GET a la API de GitHub; `token` es opcional (sin él, 60 peticiones por hora).
 export function githubFetch(token) {
   return async (path) => {
@@ -59,6 +90,44 @@ export function githubFetch(token) {
     }
     return res.json();
   };
+}
+
+// POST a la API GraphQL; devuelve el JSON entero, `errors` incluido. GraphQL no
+// acepta peticiones sin token (el `GITHUB_TOKEN` de Actions basta, PLAN §5).
+export function githubGraphql(token) {
+  return async (query, variables) => {
+    if (!token) throw new Error('la API GraphQL pide un token; pasa GITHUB_TOKEN');
+    const res = await fetch(`${API}/graphql`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!res.ok) throw new Error(`GitHub respondió ${res.status} a /graphql`);
+    return res.json();
+  };
+}
+
+// `repositoryOwner` cubre usuarios y organizaciones; seis es el máximo de fijados.
+const PINNED = `query($login: String!) { repositoryOwner(login: $login) { ... on ProfileOwner {
+  pinnedItems(first: 6, types: REPOSITORY) { nodes { ... on Repository { nameWithOwner } } } } } }`;
+
+// Los repos fijados de `login` en su orden (RF-02), como los da parseRepo.
+export async function fetchPinned(login, graphql) {
+  login = String(login).trim();
+  if (!OWNER.test(login)) throw new Error(`pinned: "${login}" no es un nombre de usuario u organización de GitHub`);
+  let res;
+  try {
+    res = await graphql(PINNED, { login });
+  } catch (err) {
+    throw new Error(`pinned: ${login}: ${err.message}`, { cause: err });
+  }
+  const nodes = res.data?.repositoryOwner?.pinnedItems?.nodes;
+  if (!nodes) throw new Error(`pinned: ${login}: ${res.errors?.[0]?.message ?? 'no existe'}`);
+  if (!nodes.length) throw new Error(`pinned: ${login} no tiene repos fijados`);
+  return nodes.map((n) => {
+    const [owner, name] = n.nameWithOwner.split('/');
+    return { owner, name, status: null };
+  });
 }
 
 // Lo que la ficha necesita de un repo. `get(path)` devuelve el JSON de la API.

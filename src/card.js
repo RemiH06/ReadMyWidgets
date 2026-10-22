@@ -7,7 +7,7 @@ import tokens from './tokens.json' with { type: 'json' };
 import { legible } from './color.js';
 import { iconImage } from './icons.js';
 import { STATUS_LABEL } from './repo.js';
-import { escapeXml, svg } from './svg.js';
+import { image, n, svg, text } from './svg.js';
 import { measure, truncate, wrap } from './text.js';
 
 export const W = 400;
@@ -23,11 +23,6 @@ const GAP = 2; // hueco entre segmentos de la barra
 const DOT = 6; // radio del punto de status
 const SEP = ' · ';
 
-const n = (x) => Math.round(x * 100) / 100;
-const text = (x, y, size, str, cls = '') =>
-  `<text${cls ? ` class="${cls}"` : ''} x="${n(x)}" y="${y}" font-size="${size}">${escapeXml(str)}</text>`;
-const image = (x, y, size, src) =>
-  `<image x="${n(x)}" y="${n(y)}" width="${size}" height="${size}" href="${src}"/>`;
 const dot = (cx, cy, r, fill) => `<circle cx="${n(cx)}" cy="${n(cy)}" r="${r}" fill="${fill}"/>`;
 
 function star(x, y, r, fill) {
@@ -182,13 +177,15 @@ function row(repo, theme, icons, t) {
 
 const RENDER = { card: full, compact, row };
 
+// Nombre, descripción y status: `<title>` del SVG y `alt` del snippet (RNF-11).
+export const label = (repo) =>
+  repo.name +
+  (repo.description ? `: ${repo.description}` : '') +
+  (repo.status ? ` (${STATUS_LABEL[repo.status]})` : '');
+
 // `repo` sale de fetchRepo; `icons` es un Map de nombre → texto SVG o null.
 export function card(repo, theme, icons, layout = 'card') {
   const t = tokens.themes[theme];
   const body = RENDER[layout](repo, theme, icons, t).join('');
-  const label =
-    repo.name +
-    (repo.description ? `: ${repo.description}` : '') +
-    (repo.status ? ` (${STATUS_LABEL[repo.status]})` : '');
-  return svg({ width: W, height: LAYOUTS[layout], theme, title: label, body });
+  return svg({ width: W, height: LAYOUTS[layout], theme, title: label(repo), body });
 }

@@ -1,6 +1,8 @@
-// Fichas de los fixtures (sin red) y todo lo que haya en out/<layout>/, dentro de
-// <img> sobre los fondos de GitHub, en una columna de escritorio y una de teléfono.
+// Fichas y stack de los fixtures (sin red) y todo lo que haya en out/<layout>/ y
+// out/stack/, dentro de <img> sobre los fondos de GitHub, en una columna de
+// escritorio y una de teléfono.
 // Para fichas reales: node src/cli.js --repos … --layout <layout> --out out/<layout>
+// Para un stack real: node src/cli.js --stack stack.json --out out/stack
 //   npm run preview && start out/preview.html
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import tokens from './tokens.json' with { type: 'json' };
@@ -25,14 +27,28 @@ export async function fixtureGet(path) {
 export const fixtureIcon = () =>
   iconSource(async (path) => readFileSync(new URL(`devicon/${path}`, FIXTURES), 'utf8'));
 
+// GraphQL servido desde test/fixtures/api/graphql_pinned_<login>.json; un login
+// sin archivo responde como GitHub a uno que no existe.
+export async function fixtureGraphql(query, { login }) {
+  try {
+    return JSON.parse(readFileSync(new URL(`api/graphql_pinned_${login}.json`, FIXTURES), 'utf8'));
+  } catch {
+    return { data: { repositoryOwner: null }, errors: [{ message: `Could not resolve to a RepositoryOwner with the login of '${login}'.` }] };
+  }
+}
+
+export const fixtureDeps = () => ({ get: fixtureGet, graphql: fixtureGraphql, icon: fixtureIcon() });
+
 export const FIXTURE_REPOS = ['https://github.com/RemiH06/Ariadne:activo', 'RemiH06/edge'];
+export const FIXTURE_STACK = JSON.parse(readFileSync(new URL('stack.json', FIXTURES), 'utf8'));
 
 if (import.meta.main) {
   // Una columna por forma y tema: escritorio (400) y teléfono (328).
   const sections = [];
-  for (const layout of Object.keys(LAYOUTS)) {
+  for (const layout of [...Object.keys(LAYOUTS), 'stack']) {
     mkdirSync(`out/${layout}`, { recursive: true });
-    const files = await generate(FIXTURE_REPOS, { get: fixtureGet, icon: fixtureIcon(), layout });
+    const inputs = layout === 'stack' ? { stack: FIXTURE_STACK } : { repos: FIXTURE_REPOS, layout };
+    const { files } = await generate(inputs, fixtureDeps());
     for (const [file, content] of files) writeFileSync(`out/${layout}/${file}`, content);
     const cards = readdirSync(`out/${layout}`)
       .filter((f) => f.endsWith('-dark.svg'))

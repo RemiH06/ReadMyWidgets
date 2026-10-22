@@ -26,6 +26,13 @@ export function escapeXml(text) {
     .replace(/[&<>"']/g, (c) => ESCAPES[c]);
 }
 
+// Piezas de dibujo compartidas por los widgets. `text` escapa lo que recibe.
+export const n = (x) => Math.round(x * 100) / 100;
+export const text = (x, y, size, str, cls = '') =>
+  `<text${cls ? ` class="${cls}"` : ''} x="${n(x)}" y="${y}" font-size="${size}">${escapeXml(str)}</text>`;
+export const image = (x, y, size, src) =>
+  `<image x="${n(x)}" y="${n(y)}" width="${size}" height="${size}" href="${src}"/>`;
+
 // Documento SVG autocontenido: fuente incrustada y colores del tema (RNF-02).
 // `body` ya debe venir escapado.
 export function svg({ width, height, theme, title, body }) {
