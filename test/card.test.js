@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import tokens from '../src/tokens.json' with { type: 'json' };
-import { W } from '../src/card.js';
+import { LAYOUTS, W } from '../src/card.js';
 import { generate } from '../src/cli.js';
 import { contrast } from '../src/color.js';
 import { iconColors } from '../src/icons.js';
@@ -9,8 +9,12 @@ import { FIXTURE_REPOS, fixtureGet, fixtureIcon } from '../src/preview.js';
 import { parseRepo } from '../src/repo.js';
 import { measure } from '../src/text.js';
 
-const files = await generate(FIXTURE_REPOS, { get: fixtureGet, icon: fixtureIcon() });
+const byLayout = {};
+for (const layout of Object.keys(LAYOUTS))
+  byLayout[layout] = await generate(FIXTURE_REPOS, { get: fixtureGet, icon: fixtureIcon(), layout });
+const files = byLayout.card;
 const themeOf = (file) => file.match(/-(dark|light)\.svg$/)[1];
+const fills = (svg) => [...svg.matchAll(/<(?:rect|circle) [^>]*fill="(#[0-9a-f]{6})"/g)].map((m) => m[1]);
 const NAMESPACES = /xmlns(:\w+)?="http:\/\/www\.w3\.org\/[^"]*"/g;
 const unescape = (s) =>
   s.replace(/&(lt|gt|amp|quot|apos);/g, (_, e) => ({ lt: '<', gt: '>', amp: '&', quot: '"', apos: "'" })[e]);
@@ -24,7 +28,7 @@ const texts = (svg) =>
   );
 
 test('RF-01: acepta URL con o sin .git o / final, y dueño/repo', () => {
-  const want = { owner: 'RemiH06', name: 'Ariadne' };
+  const want = { owner: 'RemiH06', name: 'Ariadne', status: null };
   for (const input of [
     'https://github.com/RemiH06/Ariadne',
     'https://github.com/RemiH06/Ariadne.git',
@@ -52,6 +56,22 @@ test('RF-01: lo demás falla diciendo cuál entrada y por qué', () => {
   }
 });
 
+test('status opcional tras ":" en cualquier forma; uno desconocido falla y dice cuáles hay', () => {
+  for (const [input, status] of [
+    ['RemiH06/Ariadne:activo', 'active'],
+    ['https://github.com/RemiH06/Ariadne.git:Pausa', 'paused'],
+    ['https://github.com/RemiH06/Ariadne/:concluido', 'done'],
+    ['RemiH06/Ariadne:discontinued', 'dropped'],
+  ]) {
+    assert.equal(parseRepo(input).status, status, input);
+  }
+  assert.throws(() => parseRepo('RemiH06/Ariadne:vivo'), /"vivo" no es un status \(activo/);
+});
+
+test('layout desconocido falla antes de pedir nada', async () => {
+  await assert.rejects(generate(['RemiH06/Ariadne'], { get: fixtureGet, layout: 'grid' }), /layout: "grid"/);
+});
+
 test('un repo que no existe falla con su nombre y no devuelve nada (RF-06)', async () => {
   await assert.rejects(
     generate(['RemiH06/Ariadne', 'RemiH06/nope'], { get: fixtureGet, icon: fixtureIcon() }),
@@ -72,8 +92,18 @@ test('íconos: devicon por name, altnames o name + versión; sin ícono, null', 
   for (const name of ['Shell', 'machine-learning']) assert.equal(await icon(name), null, name);
 });
 
-for (const [file, svg] of files) {
+for (const [layout, svg, file] of Object.entries(byLayout).flatMap(([l, fs]) => [...fs].map(([f, s]) => [l, s, `${l}/${f}`]))) {
   const t = tokens.themes[themeOf(file)];
+
+  test(`${file}: mide lo que dice su layout`, () => {
+    assert.match(svg, new RegExp(`viewBox="0 0 ${W} ${LAYOUTS[layout]}"`));
+  });
+
+  test(`${file}: barra y puntos dan 3:1 sobre el fondo (RNF-03)`, () => {
+    for (const fill of fills(svg).filter((f) => f !== t.bg)) {
+      assert.ok(contrast(fill, t.bg) >= 3, `${fill} sobre ${t.bg}: ${contrast(fill, t.bg).toFixed(2)}`);
+    }
+  });
 
   test(`${file}: pesa menos de 100 KB y es autocontenido (RNF-01, RNF-02)`, () => {
     assert.ok(Buffer.byteLength(svg) < 100 * 1024, `${Buffer.byteLength(svg)} bytes`);

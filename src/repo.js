@@ -3,20 +3,33 @@
 const API = 'https://api.github.com';
 const OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
 const NAME = /^[A-Za-z0-9._-]{1,100}$/;
-const USAGE = 'usa https://github.com/dueño/repo o dueño/repo';
+const USAGE = 'usa https://github.com/dueño/repo o dueño/repo, con :status opcional';
 
-// `https://github.com/o/r` (con o sin `.git` o `/` final) u `o/r` → { owner, name }.
-// Cualquier otra cosa lanza un error que dice cuál entrada y por qué.
+// Status que da el consumidor tras `:` (la API no lo sabe) → token de color.
+export const STATUS = {
+  activo: 'active', active: 'active',
+  pausa: 'paused', pausado: 'paused', paused: 'paused',
+  concluido: 'done', done: 'done',
+  descontinuado: 'dropped', discontinued: 'dropped',
+};
+export const STATUS_LABEL = { active: 'activo', paused: 'en pausa', done: 'concluido', dropped: 'descontinuado' };
+
+// `https://github.com/o/r` (con o sin `.git` o `/` final) u `o/r`, con `:status`
+// opcional → { owner, name, status }. Cualquier otra cosa lanza un error que dice
+// cuál entrada y por qué.
 export function parseRepo(input) {
   const raw = String(input).trim();
   const fail = (why) => {
     throw new Error(`repos: "${raw}" no es un repo válido: ${why}; ${USAGE}`);
   };
-  let path = raw;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) {
+  const [, bare, word] = raw.match(/^(.*?)(?::([^:/]*))?$/);
+  const status = word === undefined ? null : STATUS[word.toLowerCase()];
+  if (status === undefined) fail(`"${word}" no es un status (${Object.keys(STATUS).join(', ')})`);
+  let path = bare;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(bare)) {
     let url;
     try {
-      url = new URL(raw);
+      url = new URL(bare);
     } catch {
       fail('la URL está mal formada');
     }
@@ -30,7 +43,7 @@ export function parseRepo(input) {
   const [owner, name] = parts;
   if (!OWNER.test(owner)) fail(`"${owner}" no es un nombre de usuario u organización de GitHub`);
   if (!NAME.test(name) || name === '.' || name === '..') fail(`"${name}" no es un nombre de repo de GitHub`);
-  return { owner, name };
+  return { owner, name, status };
 }
 
 // GET a la API de GitHub; `token` es opcional (sin él, 60 peticiones por hora).
@@ -50,7 +63,8 @@ export function githubFetch(token) {
 
 // Lo que la ficha necesita de un repo. `get(path)` devuelve el JSON de la API.
 // `topics` ya viene en `repos/{o}/{r}`: no hace falta pedir `/topics`.
-export async function fetchRepo({ owner, name }, get) {
+// Sin status del consumidor, un repo archivado cuenta como descontinuado.
+export async function fetchRepo({ owner, name, status = null }, get) {
   let repo, languages;
   try {
     [repo, languages] = await Promise.all([
@@ -73,6 +87,7 @@ export async function fetchRepo({ owner, name }, get) {
     description: repo.description ?? '',
     stars: repo.stargazers_count,
     archived: repo.archived,
+    status: status ?? (repo.archived ? 'dropped' : null),
     year: repo.created_at.slice(0, 4),
     topics: repo.topics ?? [],
     languages: Object.entries(languages).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)),
