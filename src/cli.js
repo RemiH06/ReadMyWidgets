@@ -75,6 +75,29 @@ export function snippet(widgets, base) {
     .join('\n');
 }
 
+// Lo que hacen igual el CLI y la Action: leer `stack.json` (ruta), generar,
+// escribir en `out` y devolver las rutas escritas y el snippet.
+export async function run({ repos, pinned, status, stack: stackPath, layout, out, base }, token) {
+  let stackJson;
+  if (stackPath) {
+    try {
+      stackJson = JSON.parse(readFileSync(stackPath, 'utf8'));
+    } catch (err) {
+      throw new Error(`stack: no se pudo leer ${stackPath}: ${err.message}`);
+    }
+  }
+  const { files, widgets } = await generate(
+    { repos, pinned, status, stack: stackJson, layout },
+    { get: githubFetch(token), graphql: githubGraphql(token) },
+  );
+  mkdirSync(out, { recursive: true });
+  for (const [file, content] of files) writeFileSync(join(out, file), content);
+  return {
+    paths: [...files.keys()].map((f) => join(out, f)),
+    html: snippet(widgets, base || out.replaceAll('\\', '/')),
+  };
+}
+
 const USAGE = `Uso: node src/cli.js (--repos dueño/repo[:status][,…] | --pinned usuario) [--status repo:status,…]
                    [--stack stack.json] [--layout card|compact|row] [--out carpeta] [--base ruta-o-url]`;
 
@@ -95,23 +118,12 @@ if (import.meta.main) {
     process.exit(2);
   }
   try {
-    let stackJson;
-    if (values.stack) {
-      try {
-        stackJson = JSON.parse(readFileSync(values.stack, 'utf8'));
-      } catch (err) {
-        throw new Error(`stack: no se pudo leer ${values.stack}: ${err.message}`);
-      }
-    }
-    const token = process.env.GITHUB_TOKEN;
-    const { files, widgets } = await generate(
-      { repos: list(values.repos), pinned: values.pinned, status: list(values.status), stack: stackJson, layout: values.layout },
-      { get: githubFetch(token), graphql: githubGraphql(token) },
+    const { paths, html } = await run(
+      { ...values, repos: list(values.repos), status: list(values.status) },
+      process.env.GITHUB_TOKEN,
     );
-    mkdirSync(values.out, { recursive: true });
-    for (const [file, content] of files) writeFileSync(join(values.out, file), content);
-    console.error([...files.keys()].map((f) => join(values.out, f)).join('\n'));
-    console.log(snippet(widgets, values.base ?? values.out.replaceAll('\\', '/')));
+    console.error(paths.join('\n'));
+    console.log(html);
   } catch (err) {
     console.error(err.message);
     // exitCode y no exit(): con un fetch aún abierto, exit() tumba a libuv en Windows.

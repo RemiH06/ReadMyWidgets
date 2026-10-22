@@ -1,0 +1,39 @@
+name: ReadMyWidgets
+description: Fichas de repo y bloques de stack en SVG estático, oscuro y claro, para el README de tu perfil.
+author: Hex (@RemiH06)
+branding:
+  icon: image
+  color: gray-dark
+
+inputs:
+  repos:
+    description: 'Repos, uno por renglón o separados por coma: dueño/repo o https://github.com/dueño/repo, con :status opcional (activo, pausa, concluido, descontinuado).'
+    required: false
+  pinned:
+    description: En lugar de repos, los repos fijados de este usuario u organización, en su orden.
+    required: false
+  status:
+    description: 'repo:status (o dueño/repo:status) para los repos que no lo traen, como los de pinned.'
+    required: false
+  stack:
+    description: Ruta a un stack.json en tu repo; genera un bloque por categoría.
+    required: false
+  layout:
+    description: card, compact o row.
+    required: false
+    default: card
+  out:
+    description: Carpeta donde se escriben los SVG.
+    required: false
+    default: widgets
+  base:
+    description: Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime. Por defecto, la de out.
+    required: false
+  token:
+    description: Token para la API de GitHub. El GITHUB_TOKEN del workflow alcanza, también para pinned.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: node24
+  main: src/action.js
