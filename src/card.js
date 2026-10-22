@@ -3,7 +3,6 @@
 //   compact  título con fecha y estrellas, 1 línea de descripción, barra y leyenda
 //   row      un renglón: status, nombre, técnica y fecha, barra corta
 import linguist from './linguist.json' with { type: 'json' };
-import tokens from './tokens.json' with { type: 'json' };
 import { legible } from './color.js';
 import { iconImage } from './icons.js';
 import { STATUS_LABEL } from './repo.js';
@@ -77,7 +76,7 @@ function bar(x, y, w, repo, shown, t) {
 
 // Leyenda en una fila desde `x0`: ícono (o punto del color de la barra), nombre y
 // porcentaje; los lenguajes que no caben se juntan en el resto de la barra.
-function legend(x0, y, repo, icons, theme, t) {
+function legend(x0, y, repo, icons, t) {
   const total = repo.languages.reduce((s, [, b]) => s + b, 0);
   const parts = [];
   const shown = [];
@@ -88,7 +87,7 @@ function legend(x0, y, repo, icons, theme, t) {
     const pct = percent((bytes * 100) / total);
     const w = mark + 6 + measure(`${lang} ${pct}`, BODY);
     if (x + w > W - PAD) break;
-    if (svgIcon) parts.push(image(x, y - 14, ICON, iconImage(svgIcon, theme)));
+    if (svgIcon) parts.push(image(x, y - 14, ICON, iconImage(svgIcon, t)));
     else parts.push(dot(x + 4, y - 5, 4, langColor(lang, t)));
     const tx = x + mark + 6;
     parts.push(text(tx, y, BODY, lang));
@@ -99,7 +98,7 @@ function legend(x0, y, repo, icons, theme, t) {
   return { parts, shown };
 }
 
-function full(repo, theme, icons, t) {
+function full(repo, icons, t) {
   const parts = [];
   const mark = repo.status ? DOT * 2 + 6 : 0;
   parts.push(text(PAD, 44, TITLE, truncate(repo.name, TITLE, INNER - mark, 'bold'), 'b'));
@@ -111,7 +110,7 @@ function full(repo, theme, icons, t) {
   let right = W - PAD;
   for (const tp of topics.slice(0, 5).reverse()) {
     right -= TOPIC;
-    parts.push(image(right, 70 - 12.5, TOPIC, iconImage(icons.get(tp), theme)));
+    parts.push(image(right, 70 - 12.5, TOPIC, iconImage(icons.get(tp), t)));
     right -= 8;
   }
   const head = [repo.languages.slice(0, 2).map(([l]) => l).join(', '), repo.year].filter(Boolean);
@@ -127,12 +126,12 @@ function full(repo, theme, icons, t) {
 
   wrap(repo.description, BODY, INNER, 2).forEach((l, i) => parts.push(text(PAD, 100 + i * 22, BODY, l)));
 
-  const lg = legend(PAD, 176, repo, icons, theme, t);
+  const lg = legend(PAD, 176, repo, icons, t);
   parts.push(bar(PAD, 139, INNER, repo, lg.shown, t), ...lg.parts);
   return parts;
 }
 
-function compact(repo, theme, icons, t) {
+function compact(repo, icons, t) {
   const parts = [];
   // Título a la izquierda; año, estrellas y status a la derecha.
   let right = W - PAD;
@@ -146,12 +145,12 @@ function compact(repo, theme, icons, t) {
 
   wrap(repo.description, BODY, INNER, 1).forEach((l) => parts.push(text(PAD, 68, BODY, l)));
 
-  const lg = legend(PAD, 112, repo, icons, theme, t);
+  const lg = legend(PAD, 112, repo, icons, t);
   parts.push(bar(PAD, 82, INNER, repo, lg.shown, t), ...lg.parts);
   return parts;
 }
 
-function row(repo, theme, icons, t) {
+function row(repo, icons, t) {
   const parts = [];
   const BAR_W = 112;
   let x = PAD;
@@ -184,8 +183,7 @@ export const label = (repo) =>
   (repo.status ? ` (${STATUS_LABEL[repo.status]})` : '');
 
 // `repo` sale de fetchRepo; `icons` es un Map de nombre → texto SVG o null.
-export function card(repo, theme, icons, layout = 'card') {
-  const t = tokens.themes[theme];
-  const body = RENDER[layout](repo, theme, icons, t).join('');
-  return svg({ width: W, height: LAYOUTS[layout], theme, title: label(repo), body });
+export function card(repo, t, icons, layout = 'card') {
+  const body = RENDER[layout](repo, icons, t).join('');
+  return svg({ width: W, height: LAYOUTS[layout], t, title: label(repo), body });
 }

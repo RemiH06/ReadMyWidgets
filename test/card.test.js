@@ -7,6 +7,7 @@ import { contrast } from '../src/color.js';
 import { iconColors } from '../src/icons.js';
 import { FIXTURE_REPOS, FIXTURE_STACK, fixtureDeps, fixtureGet, fixtureIcon } from '../src/preview.js';
 import { parseRepo } from '../src/repo.js';
+import { palette } from '../src/svg.js';
 import { measure } from '../src/text.js';
 
 // Las tres alturas de ficha y el bloque de stack pasan por las mismas pruebas por archivo.
@@ -14,6 +15,11 @@ const byLayout = {};
 for (const layout of Object.keys(LAYOUTS))
   byLayout[layout] = (await generate({ repos: FIXTURE_REPOS, layout }, fixtureDeps())).files;
 byLayout.stack = (await generate({ stack: FIXTURE_STACK }, fixtureDeps())).files;
+// Sin caja, lo de adentro queda sobre la página: mismas pruebas contra `page`.
+for (const layout of Object.keys(byLayout)) {
+  const inputs = layout === 'stack' ? { stack: FIXTURE_STACK } : { repos: FIXTURE_REPOS, layout };
+  byLayout[`${layout}~transparent`] = (await generate({ ...inputs, background: 'transparent' }, fixtureDeps())).files;
+}
 const files = byLayout.card;
 const themeOf = (file) => file.match(/-(dark|light)\.svg$/)[1];
 const fills = (svg) => [...svg.matchAll(/<(?:rect|circle) [^>]*fill="(#[0-9a-f]{6})"/g)].map((m) => m[1]);
@@ -70,6 +76,10 @@ test('status opcional tras ":" en cualquier forma; uno desconocido falla y dice 
   assert.throws(() => parseRepo('RemiH06/Ariadne:vivo'), /"vivo" no es un status \(activo/);
 });
 
+test('background desconocido falla antes de pedir nada', async () => {
+  await assert.rejects(generate({ repos: ['RemiH06/Ariadne'], background: 'glass' }, { get: fixtureGet }), /background: "glass"/);
+});
+
 test('layout desconocido falla antes de pedir nada', async () => {
   await assert.rejects(generate({ repos: ['RemiH06/Ariadne'], layout: 'grid' }, { get: fixtureGet }), /layout: "grid"/);
 });
@@ -95,10 +105,15 @@ test('íconos: devicon por name, altnames o name + versión; sin ícono, null', 
 });
 
 for (const [layout, svg, file] of Object.entries(byLayout).flatMap(([l, fs]) => [...fs].map(([f, s]) => [l, s, `${l}/${f}`]))) {
-  const t = tokens.themes[themeOf(file)];
+  const [base, background] = layout.split('~');
+  const t = palette(themeOf(file), background === 'transparent');
 
   test(`${file}: mide lo que dice su layout`, () => {
-    assert.match(svg, new RegExp(`viewBox="0 0 ${W} ${LAYOUTS[layout] ?? '\\d+'}"`));
+    assert.match(svg, new RegExp(`viewBox="0 0 ${W} ${LAYOUTS[base] ?? '\\d+'}"`));
+  });
+
+  test(`${file}: la caja tiene el fondo que se pidió`, () => {
+    assert.match(svg, new RegExp(`<rect x="0.5" y="0.5" [^>]*fill="${t.fill}" stroke="${t.border}"/>`));
   });
 
   test(`${file}: barra y puntos dan 3:1 sobre el fondo (RNF-03)`, () => {

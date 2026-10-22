@@ -76,15 +76,15 @@ function flow(items, icons) {
 export const label = (category) => `${category.name}: ${category.items.map((i) => i.name).join(', ')}`;
 
 // `icons` es un Map de `icon` → texto SVG o null.
-export function stack(category, theme, icons) {
+export function stack(category, t, icons) {
   const rows = flow(category.items, icons);
   const parts = [text(PAD, 44, TITLE, truncate(category.name, TITLE, INNER, 'bold'), 'b')];
   rows.forEach((row, r) => {
     const y = FIRST + r * LINE;
     for (const item of row) {
-      if (item.mark) parts.push(image(item.x, y - 14, ICON, iconImage(icons.get(item.icon), theme)));
+      if (item.mark) parts.push(image(item.x, y - 14, ICON, iconImage(icons.get(item.icon), t)));
       parts.push(text(item.x + item.mark, y, BODY, item.name));
     }
   });
-  return svg({ width: W, height: FIRST + (rows.length - 1) * LINE + BOTTOM, theme, title: label(category), body: parts.join('') });
+  return svg({ width: W, height: FIRST + (rows.length - 1) * LINE + BOTTOM, t, title: label(category), body: parts.join('') });
 }

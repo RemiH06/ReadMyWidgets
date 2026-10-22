@@ -1,6 +1,7 @@
 // Fichas, stack y nixie de los fixtures (sin red) y todo lo que haya en
-// out/<layout>/, out/stack/ y out/nixie/, dentro de <img> sobre los fondos de GitHub, en una columna de
-// escritorio y una de teléfono.
+// out/<layout>/, out/stack/ y out/nixie/, más todos sin caja en out/transparent/,
+// dentro de <img> sobre los fondos de GitHub, en una columna de escritorio y una
+// de teléfono.
 // Para fichas reales: node src/cli.js --repos … --layout <layout> --out out/<layout>
 // Para un stack real: node src/cli.js --stack stack.json --out out/stack
 //   npm run preview && start out/preview.html
@@ -47,7 +48,11 @@ export const FIXTURE_NIXIE = { nixie: ['stars', 'commits'], user: 'RemiH06', yea
 if (import.meta.main) {
   // Una columna por forma y tema: escritorio (400) y teléfono (328).
   const sections = [];
-  const extra = { stack: { stack: FIXTURE_STACK }, nixie: FIXTURE_NIXIE };
+  const extra = {
+    stack: { stack: FIXTURE_STACK },
+    nixie: FIXTURE_NIXIE,
+    transparent: { repos: FIXTURE_REPOS, stack: FIXTURE_STACK, ...FIXTURE_NIXIE, background: 'transparent' },
+  };
   for (const layout of [...Object.keys(LAYOUTS), ...Object.keys(extra)]) {
     mkdirSync(`out/${layout}`, { recursive: true });
     const inputs = extra[layout] ?? { repos: FIXTURE_REPOS, layout };

@@ -11,9 +11,10 @@ import { iconSource } from './icons.js';
 import { applyStatus, fetchPinned, fetchRepo, githubFetch, githubGraphql, list, parseRepo, parseStatus } from './repo.js';
 import { KINDS, fetchCount, label as nixieLabel, nixie } from './nixie.js';
 import { label as stackLabel, parseStack, stack } from './stack.js';
-import { escapeXml } from './svg.js';
+import { escapeXml, palette } from './svg.js';
 
 const MAX = 100 * 1024; // RNF-01
+const BACKGROUNDS = ['solid', 'transparent'];
 
 // Todos los archivos en memoria, nombre → contenido, y por cada widget lo que
 // necesita su snippet. Si algo falla, lanza antes de que se escriba nada (RF-06).
@@ -22,11 +23,13 @@ const MAX = 100 * 1024; // RNF-01
 //   status  lista de `repo:status` para los repos que no lo traen
 //   stack   el JSON de stack.json ya leído
 //   nixie   lista de cifras (`stars`, `commits`) de `user`; commits cuenta `year`
+//   background  `solid` (caja con fondo) o `transparent` (solo el borde)
 export async function generate(
-  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear() },
+  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear(), background = 'solid' },
   { get, graphql, icon = iconSource() },
 ) {
   if (!(layout in LAYOUTS)) throw new Error(`layout: "${layout}" no existe; usa ${Object.keys(LAYOUTS).join(', ')}`);
+  if (!BACKGROUNDS.includes(background)) throw new Error(`background: "${background}" no existe; usa ${BACKGROUNDS.join(', ')}`);
   if (repos.length && pinned) throw new Error('usa repos o pinned, no los dos');
   if (!repos.length && !pinned && stackJson === undefined && !kinds.length)
     throw new Error('no hay nada que generar: pasa repos, pinned, stack o nixie');
@@ -46,7 +49,7 @@ export async function generate(
   const add = (name, render) => {
     for (const theme of Object.keys(tokens.themes)) {
       const file = `${name}-${theme}.svg`;
-      const content = render(theme);
+      const content = render(palette(theme, background === 'transparent'));
       const size = Buffer.byteLength(content);
       if (size > MAX) throw new Error(`${file} pesa ${Math.ceil(size / 1024)} KB y el límite es 100 KB; quita íconos o divídelo`);
       files.set(file, content);
@@ -58,18 +61,18 @@ export async function generate(
     const name = `card-${repo.name}`;
     if (widgets.some((w) => w.name === name)) throw new Error(`repos: dos repos se llaman ${repo.name}`);
     const icons = await iconsFor([...repo.languages.map(([l]) => l), ...repo.topics]);
-    add(name, (theme) => card(repo, theme, icons, layout));
+    add(name, (t) => card(repo, t, icons, layout));
     widgets.push({ name, href: repo.url, alt: label(repo) });
   }
   for (const category of categories) {
     const icons = await iconsFor(category.items.map((i) => i.icon));
     const name = `stack-${category.slug}`;
-    add(name, (theme) => stack(category, theme, icons));
+    add(name, (t) => stack(category, t, icons));
     widgets.push({ name, alt: stackLabel(category) });
   }
   for (const data of counts) {
     const name = `nixie-${data.kind}`;
-    add(name, (theme) => nixie(data, theme));
+    add(name, (t) => nixie(data, t));
     widgets.push({ name, alt: nixieLabel(data) });
   }
   return { files, widgets };
@@ -92,7 +95,7 @@ export function snippet(widgets, base) {
 
 // Lo que hacen igual el CLI y la Action: leer `stack.json` (ruta), generar,
 // escribir en `out` y devolver las rutas escritas y el snippet.
-export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, out, base }, token) {
+export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, background, out, base }, token) {
   let stackJson;
   if (stackPath) {
     try {
@@ -102,7 +105,7 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, nix
     }
   }
   const { files, widgets } = await generate(
-    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user },
+    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user, background },
     { get: githubFetch(token), graphql: githubGraphql(token) },
   );
   mkdirSync(out, { recursive: true });
@@ -115,7 +118,7 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, nix
 
 const USAGE = `Uso: node src/cli.js (--repos dueño/repo[:status][,…] | --pinned usuario) [--status repo:status,…]
                    [--stack stack.json] [--layout card|compact|row] [--nixie stars,commits --user usuario]
-                   [--out carpeta] [--base ruta-o-url]`;
+                   [--background solid|transparent] [--out carpeta] [--base ruta-o-url]`;
 
 if (import.meta.main) {
   const { values } = parseArgs({
@@ -127,6 +130,7 @@ if (import.meta.main) {
       layout: { type: 'string', default: 'card' },
       nixie: { type: 'string' },
       user: { type: 'string' },
+      background: { type: 'string', default: 'solid' },
       out: { type: 'string', default: 'out' },
       base: { type: 'string' },
     },

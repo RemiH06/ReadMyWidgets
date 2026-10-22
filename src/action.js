@@ -16,6 +16,7 @@ export function inputs(env = process.env) {
     layout: get('layout') || 'card',
     nixie: list(get('nixie')),
     user: get('user') || undefined,
+    background: get('background') || 'solid',
     out: get('out') || 'widgets',
     base: get('base') || undefined,
   };

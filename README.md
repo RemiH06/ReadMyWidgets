@@ -180,6 +180,7 @@ la variable de entorno `GITHUB_TOKEN`.
 - `layout` `card` (por defecto), `compact` o `row`.
 - `nixie` Lista de cifras en tubos nixie: `stars` (estrellas de los repos públicos de `user`, sin forks) y `commits` (sus commits del año en curso). Un archivo por cifra: `nixie-stars-dark.svg`, `nixie-commits-dark.svg` y sus `-light.svg`.
 - `user` De quién son las cifras del nixie; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie`.
+- `background` `solid` (por defecto) o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Aplica a todos los widgets; los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
 - `out` Carpeta de salida: `widgets` en la Action, `out` en el CLI.
 - `base` Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime; por defecto, la de `out`. Si publicas en la rama `widgets`, es `https://raw.githubusercontent.com/<dueño>/<repo>/widgets`.
 - `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned` y `--nixie`.

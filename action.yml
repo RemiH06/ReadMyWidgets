@@ -29,6 +29,10 @@ inputs:
     description: Usuario cuyas cifras cuentan los tubos nixie. Por defecto, el dueño del repo donde corre.
     required: false
     default: ${{ github.repository_owner }}
+  background:
+    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets.'
+    required: false
+    default: solid
   out:
     description: Carpeta donde se escriben los SVG.
     required: false

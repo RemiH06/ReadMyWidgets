@@ -49,6 +49,12 @@ test('nixie: contraste de la cifra y el brillo sobre el tubo (RNF-03)', () => {
   }
 });
 
+test('nixie: sin caja, el tubo conserva su vidrio', async () => {
+  const svg = (await generate({ ...FIXTURE_NIXIE, background: 'transparent' }, fixtureDeps())).files.get('nixie-stars-dark.svg');
+  assert.match(svg, /<rect x="0.5" y="0.5" [^>]*fill="none"/);
+  assert.match(svg, new RegExp(`fill="${tokens.nixie.tube}"`));
+});
+
 test('nixie: quieto y legible con prefers-reduced-motion', () => {
   const svg = files.get('nixie-commits-dark.svg');
   assert.match(svg, /@media \(prefers-reduced-motion:reduce\)\{\.f,\.z\{animation:none\}\}/);

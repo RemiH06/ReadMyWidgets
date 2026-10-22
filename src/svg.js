@@ -33,10 +33,17 @@ export const text = (x, y, size, str, cls = '') =>
 export const image = (x, y, size, src) =>
   `<image x="${n(x)}" y="${n(y)}" width="${size}" height="${size}" href="${src}"/>`;
 
-// Documento SVG autocontenido: fuente incrustada y colores del tema (RNF-02).
-// `body` ya debe venir escapado; `css` es el estilo propio del widget.
-export function svg({ width, height, theme, title, body, css: own = '' }) {
+// Colores de un tema para dibujar. Con `transparent` la caja no tiene relleno y
+// lo de adentro queda sobre la página de GitHub: `bg` pasa a ser `page`, y
+// contra ese se miden los colores de lenguaje y de íconos.
+export function palette(theme, transparent = false) {
   const t = tokens.themes[theme];
+  return transparent ? { ...t, bg: t.page, fill: 'none' } : { ...t, fill: t.bg };
+}
+
+// Documento SVG autocontenido: fuente incrustada y colores de `t`, una
+// `palette` (RNF-02). `body` ya debe venir escapado; `css` es el estilo propio del widget.
+export function svg({ width, height, t, title, body, css: own = '' }) {
   const css =
     FONT_FACE +
     `text{font-family:'${FAMILY}',sans-serif;fill:${t.text}}` +
@@ -47,6 +54,6 @@ export function svg({ width, height, theme, title, body, css: own = '' }) {
     `viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(title)}">` +
     `<title>${escapeXml(title)}</title><style>${css}</style>` +
     `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" ` +
-    `fill="${t.bg}" stroke="${t.border}"/>${body}</svg>\n`
+    `fill="${t.fill}" stroke="${t.border}"/>${body}</svg>\n`
   );
 }

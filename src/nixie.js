@@ -113,8 +113,7 @@ function tube(i, digit, rand) {
 }
 
 // `data` es { kind, login, year, count }.
-export function nixie(data, theme) {
-  const t = tokens.themes[theme];
+export function nixie(data, t) {
   const x = tokens.nixie;
   const digits = String(data.count);
   const count = Math.max(MIN_TUBES, digits.length);
@@ -151,5 +150,5 @@ export function nixie(data, theme) {
     defs +
     `<g transform="translate(${PAD} ${TOP}) scale(${scale})">${tubes.join('')}</g>` +
     text(PAD, captionY, BODY, truncate(caption(data), BODY, INNER), 'dim');
-  return svg({ width: W, height: Math.ceil(captionY + BOTTOM), theme, title: label(data), body, css });
+  return svg({ width: W, height: Math.ceil(captionY + BOTTOM), t, title: label(data), body, css });
 }

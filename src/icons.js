@@ -1,7 +1,6 @@
 // Íconos de lenguajes y topics: devicon (versión fija, por `name`/`altnames`),
 // luego `icons/` propios, luego nada (la ficha pone el nombre en texto).
 import { readFile } from 'node:fs/promises';
-import tokens from './tokens.json' with { type: 'json' };
 import { contrast } from './color.js';
 
 export const DEVICON = 'https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/';
@@ -69,11 +68,10 @@ export function iconColors(svg) {
 // El ícono como data URI para `<image>`: así sus ids y estilos no chocan con
 // los de otros íconos del mismo SVG. Si ningún color se distingue del fondo
 // (≥ 3:1, RNF-03), es un ícono monocromo oscuro o claro y se pinta con `text`.
-export function iconImage(svg, theme) {
+export function iconImage(svg, t) {
   if (/<script|<foreignObject|\bhref\s*=\s*"(?!#)/i.test(svg)) {
     throw new Error('ícono con script, foreignObject o enlace externo');
   }
-  const t = tokens.themes[theme];
   const visible = iconColors(svg).some((c) => contrast(c, t.bg) >= 3);
   if (!visible) {
     svg = svg
