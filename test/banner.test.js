@@ -31,7 +31,7 @@ test('banner: lo que no cabe falla con mensaje en vez de cortarse', async () => 
   await assert.rejects(run({ banner: true, text: 'Supercalifragilisticoespialidoso' }), /"Supercalifragilisticoespialidoso" no cabe en una línea/);
   await assert.rejects(run({ banner: true, text: '   ' }), /el texto está vacío/);
   await assert.rejects(run({ banner: true }), /falta text, o user/);
-  await assert.rejects(run({ repos: FIXTURE_REPOS, text: 'Hola' }), /text: es el texto del banner/);
+  await assert.rejects(run({ repos: FIXTURE_REPOS, text: 'Hola' }), /text: es el texto del banner o de la matriz/);
 });
 
 test('banner: escapa el texto (RNF-07)', async () => {

@@ -20,6 +20,7 @@ export function inputs(env = process.env) {
     text: get('text') || undefined,
     iching: get('iching') === 'true',
     colofon: get('colofon') === 'true',
+    matrix: list(get('matrix')),
     background: get('background') || undefined,
     out: get('out') || 'widgets',
     base: get('base') || undefined,

@@ -26,23 +26,26 @@ inputs:
     description: 'Cifras en tubos nixie, separadas por coma: stars (estrellas de tus repos públicos, sin forks) y commits (commits del año en curso).'
     required: false
   user:
-    description: Usuario de los tubos nixie y los hexagramas. Por defecto, el dueño del repo donde corre.
+    description: Usuario de los tubos nixie y los hexagramas, y texto del banner y de matrix text si no hay text. Por defecto, el dueño del repo donde corre.
     required: false
     default: ${{ github.repository_owner }}
   banner:
     description: 'true para un banner pizarrón: text (o user, si no hay text) escrito en gis, en hasta 2 líneas.'
     required: false
   text:
-    description: Texto del banner. Si no cabe en 2 líneas, la Action falla en vez de cortarlo.
+    description: 'Texto del banner y de matrix text. Si no cabe en 2 líneas del banner, o la matriz no tiene letra para algún carácter (solo A-Z, 0-9, espacio y - . , : ! ?; los acentos se quitan), la Action falla.'
     required: false
   iching:
     description: 'true para las últimas 52 semanas completas de contribuciones de user como hexagramas del I Ching: lunes a viernes son las líneas 1 a 5 y el fin de semana la 6, entera si hubo contribuciones.'
+    required: false
+  matrix:
+    description: 'Modos de la matriz Glyph (los 489 LEDs del Nothing Phone 3), separados por coma: text (text, o user, en letras de 5×5 que corren si no caben), pulse (una onda que sale del centro) y fluid (manchas de luz que derivan). Un archivo por modo.'
     required: false
   colofon:
     description: 'true para dibujar stack como el colofón: una banda de logos en loop por categoría, teñidos de un color por banda. El HTML las apila.'
     required: false
   background:
-    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets. Por defecto, solid en fichas y stack y transparent en banner, nixie, iching y colofon.'
+    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets. Por defecto, solid en fichas y stack y transparent en banner, nixie, iching, colofon y matrix.'
     required: false
   out:
     description: Carpeta donde se escriben los SVG.

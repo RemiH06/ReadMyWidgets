@@ -43,10 +43,11 @@ export function palette(theme, transparent = false) {
 
 // Documento SVG autocontenido: fuente incrustada y colores de `t`, una
 // `palette` (RNF-02). `body` ya debe venir escapado; `css` es el estilo propio del widget.
+// La fuente va solo si hay `<text>`: sin ella, un widget de puntos pesa ~25 KB menos.
 // Con `frame` en false no hay caja: el widget dibuja su propio fondo.
 export function svg({ width, height, t, title, body, css: own = '', frame = true }) {
   const css =
-    FONT_FACE +
+    (body.includes('<text') ? FONT_FACE : '') +
     `text{font-family:'${FAMILY}',sans-serif;fill:${t.text}}` +
     `.b{font-weight:700}.dim{fill:${t.dim}}` +
     own;

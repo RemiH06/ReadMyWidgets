@@ -59,7 +59,10 @@ sabe, el estado de cada proyecto, lo das tú.
     <td><b>Hexagramas</b><br><code>iching: true</code><br>Tus últimas 52 semanas como hexagramas del I Ching: lunes a viernes son las líneas 1 a 5 y el fin de semana la 6, entera si contribuiste. Al cargar giran hacia la semana más reciente y se enderezan.</td>
     <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/iching/iching-dark.svg"><img src="docs/gallery/iching/iching-light.svg" width="400" alt="RemiH06: 52 semanas de contribuciones como hexagramas del I Ching, 20 oct 2025 a 18 oct 2026; 171 de 364 días con contribuciones"></picture></td>
   </tr>
-  <tr><td><b>Matriz de puntos</b></td><td>En camino: matriz tipo Glyph con texto propio, pulso desde el centro o deriva lenta.</td></tr>
+  <tr>
+    <td><b>Matriz Glyph</b><br><code>matrix: text, pulse, fluid</code><br>Los 489 LEDs de la matriz del Nothing Phone (3): tu texto (o tu usuario) en letras de 5×5 que corren de derecha a izquierda, una onda que sale del centro o manchas de luz que derivan.</td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/matrix/matrix-text-dark.svg"><img src="docs/gallery/matrix/matrix-text-light.svg" width="400" alt="Matriz Glyph de 489 LEDs con el texto &quot;REMIH06&quot;"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/matrix/matrix-fluid-dark.svg"><img src="docs/gallery/matrix/matrix-fluid-light.svg" width="400" alt="Matriz Glyph de 489 LEDs: manchas de luz que derivan lentamente"></picture></td>
+  </tr>
   <tr>
     <td><b>Nixie</b><br><code>nixie: commits, stars</code><br>Tus commits del año o las estrellas de tus repos públicos en tubos nixie que recorren sus cátodos al cargar.</td>
     <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-commits-dark.svg"><img src="docs/gallery/nixie/nixie-commits-light.svg" width="400" alt="RemiH06: 799 commits en 2026"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-stars-dark.svg"><img src="docs/gallery/nixie/nixie-stars-light.svg" width="400" alt="RemiH06: 23 estrellas en sus repos públicos"></picture></td>
@@ -178,6 +181,7 @@ node src/cli.js --nixie commits,stars --user tuUsuario --out widgets
 node src/cli.js --banner --text "Hola, soy yo" --out widgets
 node src/cli.js --stack stack.json --colofon --out widgets
 node src/cli.js --iching --user tuUsuario --out widgets
+node src/cli.js --matrix text,pulse --text "Hola" --out widgets
 ```
 
 Escribe los SVG en `widgets/` e imprime el HTML para tu README. Las opciones
@@ -193,11 +197,12 @@ la variable de entorno `GITHUB_TOKEN`.
 - `colofon` `true` para dibujar `stack` como el colofón: una banda de logos en loop por categoría (`colofon-<categoría>-dark.svg` y `-light.svg`) en vez de bloques. Los logos van en la versión de un color de devicon, teñidos con el color de la banda. Cada banda es un SVG y el HTML las apila con `<br>`.
 - `layout` `card` (por defecto), `compact` o `row`.
 - `nixie` Lista de cifras en tubos nixie: `stars` (estrellas de los repos públicos de `user`, sin forks) y `commits` (sus commits del año en curso). Un archivo por cifra: `nixie-stars-dark.svg`, `nixie-commits-dark.svg` y sus `-light.svg`.
-- `user` De quién son las cifras del nixie y los hexagramas, y el texto del banner si no das `text`; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie` y `--iching`.
+- `user` De quién son las cifras del nixie y los hexagramas, y el texto del banner y de la matriz si no das `text`; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie` y `--iching`.
 - `banner` `true` para el banner pizarrón (`banner-dark.svg` y `-light.svg`).
-- `text` Texto del banner. Si no cabe en 2 líneas, o una palabra no cabe en una, la corrida falla en vez de cortarlo.
+- `text` Texto del banner y de la matriz en modo `text`. Si no cabe en 2 líneas del banner, o una palabra no cabe en una, la corrida falla en vez de cortarlo.
+- `matrix` Lista de modos de la matriz Glyph, un archivo por modo (`matrix-text-dark.svg` y `-light.svg`, etc.): `text` (`text`, o `user`, en letras de 5×5; si cabe se queda quieto, si no corre un LED por paso), `pulse` (una onda que sale del centro) y `fluid` (manchas de luz que derivan). Las letras son A-Z, 0-9, espacio y `- . , : ! ?`; los acentos se quitan y cualquier otro carácter hace fallar la corrida.
 - `iching` `true` para tus últimas 52 semanas completas (lunes a domingo) como hexagramas del I Ching (`iching-dark.svg` y `-light.svg`). Línea entera si ese día, o ese fin de semana, tuvo al menos una contribución; partida si no.
-- `background` `solid` o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Sin él, las fichas y el stack llevan caja y los widgets decorativos (banner, nixie, hexagramas) no; si lo das, aplica a todos. Sin caja, los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
+- `background` `solid` o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Sin él, las fichas y el stack llevan caja y los widgets decorativos (banner, nixie, hexagramas, colofón, matriz) no; si lo das, aplica a todos. Sin caja, los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
 - `out` Carpeta de salida: `widgets` en la Action, `out` en el CLI.
 - `base` Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime; por defecto, la de `out`. Si publicas en la rama `widgets`, es `https://raw.githubusercontent.com/<dueño>/<repo>/widgets`.
 - `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned`, `--nixie` e `--iching`.
