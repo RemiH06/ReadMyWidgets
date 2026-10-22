@@ -1,0 +1,18 @@
+# Iteración 1: ¿el GITHUB_TOKEN de Actions puede leer pinnedItems por GraphQL?
+# Se borra en cuanto se tenga la respuesta.
+name: probe pinnedItems
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fijados del dueño y de otro usuario con GITHUB_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for user in RemiH06 torvalds; do
+            echo "== $user"
+            gh api graphql -f query="query { user(login: \"$user\") { pinnedItems(first: 6, types: REPOSITORY) { nodes { ... on Repository { nameWithOwner } } } } }" || echo "FALLÓ con $user"
+          done

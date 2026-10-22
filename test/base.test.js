@@ -1,22 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import tokens from '../src/tokens.json' with { type: 'json' };
+import { contrast } from '../src/color.js';
 import { escapeXml } from '../src/svg.js';
-import { measure, truncate } from '../src/text.js';
-import { phrase } from '../src/preview.js';
-
-function luminance(hex) {
-  const [r, g, b] = [1, 3, 5].map((i) => {
-    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrast(a, b) {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
-}
+import { measure, truncate, wrap } from '../src/text.js';
 
 const MIN = { text: 4.5, graphic: 3 };
 
@@ -36,12 +23,6 @@ test('escape XML de <&"\' y caracteres de control (RNF-07)', () => {
   assert.equal(escapeXml(`a<b>&"c'\u0001`), 'a&lt;b&gt;&amp;&quot;c&apos;');
 });
 
-test('phrase escapa el título en el SVG', () => {
-  const out = phrase('dark', '<&"', 'x');
-  assert.match(out, /&lt;&amp;&quot;/);
-  assert.doesNotMatch(out, /<&"/);
-});
-
 test('truncate no pasa del ancho y termina en … (RF-04)', () => {
   const long = 'x'.repeat(80);
   for (const weight of ['regular', 'bold']) {
@@ -50,17 +31,22 @@ test('truncate no pasa del ancho y termina en … (RF-04)', () => {
     assert.ok(measure(cut, 18, weight) <= 300);
   }
   assert.equal(truncate('corto', 13, 300), 'corto');
+  // Con espacios corta en palabra completa.
+  const words = truncate('filtros geográficos y búsqueda de especies', 15, 160);
+  assert.ok(words.endsWith('…'));
+  assert.ok('filtros geográficos y búsqueda de especies'.split(' ').includes(words.slice(0, -1).split(' ').at(-1)), words);
 });
 
-for (const theme of Object.keys(tokens.themes)) {
-  test(`SVG en ${theme}: autocontenido y ligero (RNF-01, RNF-02)`, () => {
-    const out = phrase(theme, 'ReadMyWidgets', 'hola');
-    assert.ok(Buffer.byteLength(out) < 100 * 1024);
-    assert.doesNotMatch(out.replace('xmlns="http://www.w3.org/2000/svg"', ''), /http/i);
-    assert.doesNotMatch(out, /<script|<foreignObject/i);
-  });
-}
-
-test('salida determinista (RNF-04)', () => {
-  assert.equal(phrase('light', 'a', 'b'), phrase('light', 'a', 'b'));
+test('wrap acomoda en líneas que caben y corta la última (RF-04)', () => {
+  const text = 'Una descripción bastante larga que no cabe en dos líneas de una ficha angosta, ni de chiste.';
+  const lines = wrap(text, 15, 200, 2);
+  assert.equal(lines.length, 2);
+  assert.ok(lines.every((l) => measure(l, 15) <= 200));
+  assert.ok(lines[1].endsWith('…'));
+  assert.deepEqual(wrap('corta', 15, 200, 2), ['corta']);
+  assert.deepEqual(wrap('', 15, 200, 2), []);
+  // Una palabra más ancha que la línea se parte en vez de desbordar.
+  const word = wrap('y'.repeat(60), 15, 200, 2);
+  assert.ok(word.every((l) => measure(l, 15) <= 200));
+  assert.ok(word[1].endsWith('…'));
 });

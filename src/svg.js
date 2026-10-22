@@ -38,7 +38,7 @@ export function svg({ width, height, theme, title, body }) {
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
     `viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(title)}">` +
     `<title>${escapeXml(title)}</title><style>${css}</style>` +
-    `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="6" ` +
+    `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" ` +
     `fill="${t.bg}" stroke="${t.border}"/>${body}</svg>\n`
   );
 }

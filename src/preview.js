@@ -1,48 +1,49 @@
-// Iteración 0: una frase en ambos temas dentro de <img>, sobre los fondos de GitHub.
-//   node src/preview.js && start out/preview.html
-import { mkdirSync, writeFileSync } from 'node:fs';
+// Fichas de los fixtures (sin red) y todo lo que haya en out/, dentro de <img>
+// sobre los fondos de GitHub, en una columna de escritorio y una de teléfono.
+//   npm run preview && start out/preview.html
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import tokens from './tokens.json' with { type: 'json' };
-import { escapeXml, svg } from './svg.js';
-import { truncate } from './text.js';
+import { generate } from './cli.js';
+import { iconSource } from './icons.js';
 
-const W = 480;
-const H = 96;
-const PAD = 20;
+const FIXTURES = new URL('../test/fixtures/', import.meta.url);
 
-export function phrase(theme, title, line) {
-  const t = tokens.themes[theme];
-  const max = W - PAD * 2 - 12;
-  const body =
-    `<rect x="${PAD}" y="${PAD}" width="3" height="${H - PAD * 2}" fill="${t.accent}"/>` +
-    `<text class="b" x="${PAD + 12}" y="42" font-size="18">${escapeXml(truncate(title, 18, max, 'bold'))}</text>` +
-    `<text class="dim" x="${PAD + 12}" y="66" font-size="13">${escapeXml(truncate(line, 13, max))}</text>`;
-  return svg({ width: W, height: H, theme, title, body });
+// `get` de la API servido desde test/fixtures/api: /repos/o/r/languages → o_r_languages.json.
+export async function fixtureGet(path) {
+  const file = path.replace(/^\/repos\//, '').replaceAll('/', '_') + '.json';
+  try {
+    return JSON.parse(readFileSync(new URL(`api/${file}`, FIXTURES), 'utf8'));
+  } catch {
+    const err = new Error(`GitHub respondió 404 a ${path}`);
+    err.status = 404;
+    throw err;
+  }
 }
 
-const SAMPLES = [
-  ['ReadMyWidgets', 'Fichas en SVG para tu perfil: ñandú, pingüino & <stack> “así”.'],
-  [
-    'un-nombre-de-repositorio-larguísimo-que-no-cabe-en-la-ficha-ni-de-chiste',
-    'Una descripción tan larga que tiene que cortarse con puntos suspensivos antes del borde.',
-  ],
-];
+export const fixtureIcon = () =>
+  iconSource(async (path) => readFileSync(new URL(`devicon/${path}`, FIXTURES), 'utf8'));
+
+export const FIXTURE_REPOS = ['https://github.com/RemiH06/Ariadne', 'RemiH06/edge'];
 
 if (import.meta.main) {
   mkdirSync('out', { recursive: true });
-  const rows = SAMPLES.map(([title, line], i) => {
-    const imgs = Object.entries(tokens.themes).map(([theme, t]) => {
-      const file = `phrase-${i}-${theme}.svg`;
-      writeFileSync(`out/${file}`, phrase(theme, title, line));
-      return `<div style="background:${t.page}"><img src="${file}" alt=""></div>`;
-    });
-    return imgs.join('');
-  });
+  const files = await generate(FIXTURE_REPOS, { get: fixtureGet, icon: fixtureIcon() });
+  for (const [file, content] of files) writeFileSync(`out/${file}`, content);
+
+  const cards = readdirSync('out')
+    .filter((f) => f.endsWith('-dark.svg'))
+    .sort()
+    .map((f) => f.slice(0, -'-dark.svg'.length));
+  const column = (theme, width) =>
+    `<section style="background:${tokens.themes[theme].page};width:${width}px">` +
+    cards.map((c) => `<img src="${c}-${theme}.svg" alt="">`).join('') +
+    '</section>';
   writeFileSync(
     'out/preview.html',
     `<!doctype html><meta charset="utf-8"><title>ReadMyWidgets preview</title>` +
-      `<style>body{margin:0;display:grid;grid-template-columns:1fr 1fr}` +
-      `div{padding:24px}img{display:block;max-width:100%}</style>` +
-      rows.join('') +
+      `<style>body{margin:0;display:flex;flex-wrap:wrap;align-items:flex-start}` +
+      `section{padding:16px}img{display:block;max-width:100%;margin-bottom:16px}</style>` +
+      column('dark', 400) + column('light', 400) + column('dark', 328) + column('light', 328) +
       '\n',
   );
   console.log('out/preview.html');

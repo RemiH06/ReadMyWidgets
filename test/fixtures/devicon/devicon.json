@@ -1,0 +1,229 @@
+[
+ {
+  "name": "csharp",
+  "altnames": [
+   "c#"
+  ],
+  "tags": [
+   "language"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "plain",
+    "line"
+   ],
+   "font": [
+    "plain",
+    "plain-wordmark",
+    "line",
+    "line-wordmark"
+   ]
+  },
+  "color": "#68217a",
+  "aliases": [
+   {
+    "base": "plain",
+    "alias": "plain-wordmark"
+   },
+   {
+    "base": "line",
+    "alias": "line-wordmark"
+   }
+  ]
+ },
+ {
+  "name": "docker",
+  "altnames": [],
+  "tags": [
+   "platform",
+   "deploy"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "original-wordmark",
+    "plain",
+    "plain-wordmark"
+   ],
+   "font": [
+    "plain",
+    "plain-wordmark"
+   ]
+  },
+  "color": "#019bc6",
+  "aliases": []
+ },
+ {
+  "name": "html5",
+  "altnames": [
+   "hypertextmarkdownlanguage5"
+  ],
+  "tags": [
+   "programming",
+   "language"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "original-wordmark",
+    "plain",
+    "plain-wordmark"
+   ],
+   "font": [
+    "plain",
+    "plain-wordmark"
+   ]
+  },
+  "color": "#e54d26",
+  "aliases": []
+ },
+ {
+  "name": "javascript",
+  "altnames": [
+   "js",
+   "ecmascript"
+  ],
+  "tags": [
+   "programming",
+   "language"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "plain"
+   ],
+   "font": [
+    "plain"
+   ]
+  },
+  "color": "#f0db4f",
+  "aliases": []
+ },
+ {
+  "name": "nextjs",
+  "altnames": [],
+  "tags": [
+   "framework"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "original-wordmark",
+    "plain",
+    "line",
+    "line-wordmark"
+   ],
+   "font": [
+    "original-wordmark",
+    "plain",
+    "line",
+    "line-wordmark"
+   ]
+  },
+  "color": "#000",
+  "aliases": [
+   {
+    "base": "original-wordmark",
+    "alias": "plain-wordmark"
+   }
+  ]
+ },
+ {
+  "name": "python",
+  "altnames": [],
+  "tags": [
+   "programming",
+   "language"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "original-wordmark",
+    "plain",
+    "plain-wordmark"
+   ],
+   "font": [
+    "plain",
+    "plain-wordmark"
+   ]
+  },
+  "color": "#ffd845",
+  "aliases": []
+ },
+ {
+  "name": "rust",
+  "altnames": [
+   "rustlang"
+  ],
+  "tags": [
+   "programming",
+   "language"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "line"
+   ],
+   "font": [
+    "original",
+    "line"
+   ]
+  },
+  "color": "#000",
+  "aliases": [
+   {
+    "base": "original",
+    "alias": "plain"
+   }
+  ]
+ },
+ {
+  "name": "threejs",
+  "altnames": [],
+  "tags": [
+   "javascript",
+   "framework"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "original-wordmark"
+   ],
+   "font": [
+    "original",
+    "original-wordmark"
+   ]
+  },
+  "color": "#000000",
+  "aliases": []
+ },
+ {
+  "name": "typescript",
+  "altnames": [
+   "ts"
+  ],
+  "tags": [
+   "programming",
+   "transpiler",
+   "javascript",
+   "language"
+  ],
+  "versions": {
+   "svg": [
+    "original",
+    "plain"
+   ],
+   "font": [
+    "plain"
+   ]
+  },
+  "color": "#007acc",
+  "aliases": [
+   {
+    "base": "plain",
+    "alias": "original"
+   }
+  ]
+ }
+]
