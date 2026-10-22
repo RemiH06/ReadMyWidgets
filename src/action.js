@@ -14,6 +14,8 @@ export function inputs(env = process.env) {
     status: list(get('status')),
     stack: get('stack') || undefined,
     layout: get('layout') || 'card',
+    nixie: list(get('nixie')),
+    user: get('user') || undefined,
     out: get('out') || 'widgets',
     base: get('base') || undefined,
   };

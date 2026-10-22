@@ -97,7 +97,8 @@ test('Action: los inputs de action.yml se traducen a los del CLI', async () => {
   const { inputs } = await import('../src/action.js');
   assert.deepEqual(
     inputs({ INPUT_REPOS: 'RemiH06/Ariadne:activo\nhttps://github.com/RemiH06/tanGo\n', INPUT_STATUS: '', INPUT_LAYOUT: 'row', INPUT_OUT: 'w' }),
-    { repos: ['RemiH06/Ariadne:activo', 'https://github.com/RemiH06/tanGo'], pinned: undefined, status: [], stack: undefined, layout: 'row', out: 'w', base: undefined },
+    { repos: ['RemiH06/Ariadne:activo', 'https://github.com/RemiH06/tanGo'], pinned: undefined, status: [], stack: undefined, layout: 'row', nixie: [], user: undefined, out: 'w', base: undefined },
   );
-  assert.deepEqual(inputs({ INPUT_PINNED: ' RemiH06 ' }), { repos: [], pinned: 'RemiH06', status: [], stack: undefined, layout: 'card', out: 'widgets', base: undefined });
+  assert.deepEqual(inputs({ INPUT_PINNED: ' RemiH06 ' }), { repos: [], pinned: 'RemiH06', status: [], stack: undefined, layout: 'card', nixie: [], user: undefined, out: 'widgets', base: undefined });
+  assert.deepEqual(inputs({ INPUT_NIXIE: 'stars, commits', INPUT_USER: 'RemiH06' }).nixie, ['stars', 'commits']);
 });

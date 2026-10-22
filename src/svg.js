@@ -34,13 +34,14 @@ export const image = (x, y, size, src) =>
   `<image x="${n(x)}" y="${n(y)}" width="${size}" height="${size}" href="${src}"/>`;
 
 // Documento SVG autocontenido: fuente incrustada y colores del tema (RNF-02).
-// `body` ya debe venir escapado.
-export function svg({ width, height, theme, title, body }) {
+// `body` ya debe venir escapado; `css` es el estilo propio del widget.
+export function svg({ width, height, theme, title, body, css: own = '' }) {
   const t = tokens.themes[theme];
   const css =
     FONT_FACE +
     `text{font-family:'${FAMILY}',sans-serif;fill:${t.text}}` +
-    `.b{font-weight:700}.dim{fill:${t.dim}}`;
+    `.b{font-weight:700}.dim{fill:${t.dim}}` +
+    own;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
     `viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(title)}">` +

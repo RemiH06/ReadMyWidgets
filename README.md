@@ -54,7 +54,10 @@ sabe, el estado de cada proyecto, lo das tú.
   <tr><td><b>Banner pizarrón</b></td><td>En camino: texto en gis de doble trazo sobre rejilla hexagonal, animado con CSS.</td></tr>
   <tr><td><b>Hexagramas</b></td><td>En camino: tus contribuciones dibujadas como hexagramas del I Ching.</td></tr>
   <tr><td><b>Matriz de puntos</b></td><td>En camino: matriz tipo Glyph con texto propio, pulso desde el centro o deriva lenta.</td></tr>
-  <tr><td><b>Nixie</b></td><td>En camino: tubos nixie con tus estrellas o tus commits del año.</td></tr>
+  <tr>
+    <td><b>Nixie</b><br><code>nixie: commits, stars</code><br>Tus commits del año o las estrellas de tus repos públicos en tubos nixie que recorren sus cátodos al cargar.</td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-commits-dark.svg"><img src="docs/gallery/nixie/nixie-commits-light.svg" width="400" alt="RemiH06: 797 commits en 2026"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-stars-dark.svg"><img src="docs/gallery/nixie/nixie-stars-light.svg" width="400" alt="RemiH06: 23 estrellas en sus repos públicos"></picture></td>
+  </tr>
   <tr><td><b>Ferrofluido</b></td><td>En camino: mancha de ferrofluido animada, decorativa.</td></tr>
   <tr><td><b>Objeto 3D</b></td><td>En camino: un modelo <code>.glb</code> propio o una bola disco girando lento.</td></tr>
 </table>
@@ -161,6 +164,7 @@ git clone https://github.com/RemiH06/ReadMyWidgets.git
 cd ReadMyWidgets
 node src/cli.js --repos tuUsuario/repo:activo,tuUsuario/otro:pausa --layout compact --out widgets
 node src/cli.js --pinned tuUsuario --status repo:activo --stack stack.json --out widgets
+node src/cli.js --nixie commits,stars --user tuUsuario --out widgets
 ```
 
 Escribe los SVG en `widgets/` e imprime el HTML para tu README. Las opciones
@@ -174,9 +178,11 @@ la variable de entorno `GITHUB_TOKEN`.
 - `status` Lista de `repo:status` (o `dueño/repo:status`) para los repos que no lo traen, como los de `pinned`. Un nombre que no esté entre los repos es error.
 - `stack` Ruta a un `stack.json` en tu repo; genera un bloque por categoría (`stack-<categoría>-dark.svg` y `-light.svg`).
 - `layout` `card` (por defecto), `compact` o `row`.
+- `nixie` Lista de cifras en tubos nixie: `stars` (estrellas de los repos públicos de `user`, sin forks) y `commits` (sus commits del año en curso). Un archivo por cifra: `nixie-stars-dark.svg`, `nixie-commits-dark.svg` y sus `-light.svg`.
+- `user` De quién son las cifras del nixie; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie`.
 - `out` Carpeta de salida: `widgets` en la Action, `out` en el CLI.
 - `base` Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime; por defecto, la de `out`. Si publicas en la rama `widgets`, es `https://raw.githubusercontent.com/<dueño>/<repo>/widgets`.
-- `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned`.
+- `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned` y `--nixie`.
 
 Si algo falla (un repo que no existe, un `stack.json` mal formado, un widget de
 más de 100 KB), no se escribe ningún archivo, la corrida falla y el mensaje dice

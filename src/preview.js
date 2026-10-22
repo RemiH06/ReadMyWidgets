@@ -1,5 +1,5 @@
-// Fichas y stack de los fixtures (sin red) y todo lo que haya en out/<layout>/ y
-// out/stack/, dentro de <img> sobre los fondos de GitHub, en una columna de
+// Fichas, stack y nixie de los fixtures (sin red) y todo lo que haya en
+// out/<layout>/, out/stack/ y out/nixie/, dentro de <img> sobre los fondos de GitHub, en una columna de
 // escritorio y una de teléfono.
 // Para fichas reales: node src/cli.js --repos … --layout <layout> --out out/<layout>
 // Para un stack real: node src/cli.js --stack stack.json --out out/stack
@@ -27,13 +27,14 @@ export async function fixtureGet(path) {
 export const fixtureIcon = () =>
   iconSource(async (path) => readFileSync(new URL(`devicon/${path}`, FIXTURES), 'utf8'));
 
-// GraphQL servido desde test/fixtures/api/graphql_pinned_<login>.json; un login
-// sin archivo responde como GitHub a uno que no existe.
+// GraphQL servido desde test/fixtures/api/graphql_<consulta>_<login>.json; un
+// login sin archivo responde como GitHub a uno que no existe.
 export async function fixtureGraphql(query, { login }) {
+  const kind = query.includes('pinnedItems') ? 'pinned' : query.includes('contributionsCollection') ? 'commits' : 'stars';
   try {
-    return JSON.parse(readFileSync(new URL(`api/graphql_pinned_${login}.json`, FIXTURES), 'utf8'));
+    return JSON.parse(readFileSync(new URL(`api/graphql_${kind}_${login}.json`, FIXTURES), 'utf8'));
   } catch {
-    return { data: { repositoryOwner: null }, errors: [{ message: `Could not resolve to a RepositoryOwner with the login of '${login}'.` }] };
+    return { data: { repositoryOwner: null, user: null }, errors: [{ message: `Could not resolve to a RepositoryOwner with the login of '${login}'.` }] };
   }
 }
 
@@ -41,13 +42,15 @@ export const fixtureDeps = () => ({ get: fixtureGet, graphql: fixtureGraphql, ic
 
 export const FIXTURE_REPOS = ['https://github.com/RemiH06/Ariadne:activo', 'RemiH06/edge'];
 export const FIXTURE_STACK = JSON.parse(readFileSync(new URL('stack.json', FIXTURES), 'utf8'));
+export const FIXTURE_NIXIE = { nixie: ['stars', 'commits'], user: 'RemiH06', year: 2026 };
 
 if (import.meta.main) {
   // Una columna por forma y tema: escritorio (400) y teléfono (328).
   const sections = [];
-  for (const layout of [...Object.keys(LAYOUTS), 'stack']) {
+  const extra = { stack: { stack: FIXTURE_STACK }, nixie: FIXTURE_NIXIE };
+  for (const layout of [...Object.keys(LAYOUTS), ...Object.keys(extra)]) {
     mkdirSync(`out/${layout}`, { recursive: true });
-    const inputs = layout === 'stack' ? { stack: FIXTURE_STACK } : { repos: FIXTURE_REPOS, layout };
+    const inputs = extra[layout] ?? { repos: FIXTURE_REPOS, layout };
     const { files } = await generate(inputs, fixtureDeps());
     for (const [file, content] of files) writeFileSync(`out/${layout}/${file}`, content);
     const cards = readdirSync(`out/${layout}`)

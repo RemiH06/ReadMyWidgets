@@ -1,5 +1,6 @@
 // node src/cli.js --repos RemiH06/Ariadne:activo,RemiH06/tanGo --layout compact --out out
 // node src/cli.js --pinned RemiH06 --status tanGo:activo --stack stack.json --out widgets
+// node src/cli.js --nixie stars,commits --user RemiH06 --out widgets
 // La Action llama a `generate` igual que este CLI; solo traduce sus inputs.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -8,6 +9,7 @@ import tokens from './tokens.json' with { type: 'json' };
 import { LAYOUTS, W, card, label } from './card.js';
 import { iconSource } from './icons.js';
 import { applyStatus, fetchPinned, fetchRepo, githubFetch, githubGraphql, list, parseRepo, parseStatus } from './repo.js';
+import { KINDS, fetchCount, label as nixieLabel, nixie } from './nixie.js';
 import { label as stackLabel, parseStack, stack } from './stack.js';
 import { escapeXml } from './svg.js';
 
@@ -19,17 +21,25 @@ const MAX = 100 * 1024; // RNF-01
 //   pinned  usuario u organización cuyos fijados se usan (RF-02)
 //   status  lista de `repo:status` para los repos que no lo traen
 //   stack   el JSON de stack.json ya leído
+//   nixie   lista de cifras (`stars`, `commits`) de `user`; commits cuenta `year`
 export async function generate(
-  { repos = [], pinned, status = [], stack: stackJson, layout = 'card' },
+  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear() },
   { get, graphql, icon = iconSource() },
 ) {
   if (!(layout in LAYOUTS)) throw new Error(`layout: "${layout}" no existe; usa ${Object.keys(LAYOUTS).join(', ')}`);
   if (repos.length && pinned) throw new Error('usa repos o pinned, no los dos');
-  if (!repos.length && !pinned && stackJson === undefined) throw new Error('no hay nada que generar: pasa repos, pinned o stack');
+  if (!repos.length && !pinned && stackJson === undefined && !kinds.length)
+    throw new Error('no hay nada que generar: pasa repos, pinned, stack o nixie');
+  for (const kind of kinds) if (!KINDS.includes(kind)) throw new Error(`nixie: "${kind}" no existe; usa ${KINDS.join(', ')}`);
+  if (new Set(kinds).size < kinds.length) throw new Error('nixie: hay una cifra repetida');
+  if (kinds.length && !user) throw new Error('nixie: falta user, el usuario cuyas cifras se cuentan');
   const categories = stackJson === undefined ? [] : parseStack(stackJson);
   const statusMap = parseStatus(status);
   const targets = applyStatus(pinned ? await fetchPinned(pinned, graphql) : repos.map(parseRepo), statusMap);
   const fetched = await Promise.all(targets.map((r) => fetchRepo(r, get)));
+  const counts = await Promise.all(
+    kinds.map(async (kind) => ({ kind, login: user, year, count: await fetchCount(kind, user, year, graphql) })),
+  );
 
   const files = new Map();
   const widgets = [];
@@ -57,6 +67,11 @@ export async function generate(
     add(name, (theme) => stack(category, theme, icons));
     widgets.push({ name, alt: stackLabel(category) });
   }
+  for (const data of counts) {
+    const name = `nixie-${data.kind}`;
+    add(name, (theme) => nixie(data, theme));
+    widgets.push({ name, alt: nixieLabel(data) });
+  }
   return { files, widgets };
 }
 
@@ -77,7 +92,7 @@ export function snippet(widgets, base) {
 
 // Lo que hacen igual el CLI y la Action: leer `stack.json` (ruta), generar,
 // escribir en `out` y devolver las rutas escritas y el snippet.
-export async function run({ repos, pinned, status, stack: stackPath, layout, out, base }, token) {
+export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, out, base }, token) {
   let stackJson;
   if (stackPath) {
     try {
@@ -87,7 +102,7 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, out
     }
   }
   const { files, widgets } = await generate(
-    { repos, pinned, status, stack: stackJson, layout },
+    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user },
     { get: githubFetch(token), graphql: githubGraphql(token) },
   );
   mkdirSync(out, { recursive: true });
@@ -99,7 +114,8 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, out
 }
 
 const USAGE = `Uso: node src/cli.js (--repos dueño/repo[:status][,…] | --pinned usuario) [--status repo:status,…]
-                   [--stack stack.json] [--layout card|compact|row] [--out carpeta] [--base ruta-o-url]`;
+                   [--stack stack.json] [--layout card|compact|row] [--nixie stars,commits --user usuario]
+                   [--out carpeta] [--base ruta-o-url]`;
 
 if (import.meta.main) {
   const { values } = parseArgs({
@@ -109,17 +125,19 @@ if (import.meta.main) {
       status: { type: 'string' },
       stack: { type: 'string' },
       layout: { type: 'string', default: 'card' },
+      nixie: { type: 'string' },
+      user: { type: 'string' },
       out: { type: 'string', default: 'out' },
       base: { type: 'string' },
     },
   });
-  if (!values.repos && !values.pinned && !values.stack) {
+  if (!values.repos && !values.pinned && !values.stack && !values.nixie) {
     console.error(USAGE);
     process.exit(2);
   }
   try {
     const { paths, html } = await run(
-      { ...values, repos: list(values.repos), status: list(values.status) },
+      { ...values, repos: list(values.repos), status: list(values.status), nixie: list(values.nixie) },
       process.env.GITHUB_TOKEN,
     );
     console.error(paths.join('\n'));

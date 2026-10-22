@@ -22,6 +22,13 @@ inputs:
     description: card, compact o row.
     required: false
     default: card
+  nixie:
+    description: 'Cifras en tubos nixie, separadas por coma: stars (estrellas de tus repos públicos, sin forks) y commits (commits del año en curso).'
+    required: false
+  user:
+    description: Usuario cuyas cifras cuentan los tubos nixie. Por defecto, el dueño del repo donde corre.
+    required: false
+    default: ${{ github.repository_owner }}
   out:
     description: Carpeta donde se escriben los SVG.
     required: false
