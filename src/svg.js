@@ -38,7 +38,7 @@ export const image = (x, y, size, src) =>
 // contra ese se miden los colores de lenguaje y de íconos.
 export function palette(theme, transparent = false) {
   const t = tokens.themes[theme];
-  return transparent ? { ...t, bg: t.page, fill: 'none' } : { ...t, fill: t.bg };
+  return transparent ? { ...t, theme, bg: t.page, fill: 'none' } : { ...t, theme, fill: t.bg };
 }
 
 // Documento SVG autocontenido: fuente incrustada y colores de `t`, una

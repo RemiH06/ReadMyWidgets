@@ -51,7 +51,10 @@ sabe, el estado de cada proyecto, lo das tú.
     <td><b>Bloque de stack</b><br><code>stack: stack.json</code><br>Un bloque por categoría, con ícono y nombre de cada tecnología en el orden que le des.</td>
     <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/stack/stack-languages-dark.svg"><img src="docs/gallery/stack/stack-languages-light.svg" width="400" alt="Languages: Python, Kotlin, Elixir, JavaScript, TypeScript, R, SQL, CQL (Cypher), HTML, CSS"></picture></td>
   </tr>
-  <tr><td><b>Banner pizarrón</b></td><td>En camino: texto en gis de doble trazo sobre rejilla hexagonal, animado con CSS.</td></tr>
+  <tr>
+    <td><b>Banner pizarrón</b><br><code>banner: true</code><br>Tu texto (o tu usuario) en gis de doble trazo sobre una rejilla hexagonal, que se escribe al cargar.</td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/banner/banner-dark.svg"><img src="docs/gallery/banner/banner-light.svg" width="400" alt="RemiH06"></picture></td>
+  </tr>
   <tr><td><b>Hexagramas</b></td><td>En camino: tus contribuciones dibujadas como hexagramas del I Ching.</td></tr>
   <tr><td><b>Matriz de puntos</b></td><td>En camino: matriz tipo Glyph con texto propio, pulso desde el centro o deriva lenta.</td></tr>
   <tr>
@@ -165,6 +168,7 @@ cd ReadMyWidgets
 node src/cli.js --repos tuUsuario/repo:activo,tuUsuario/otro:pausa --layout compact --out widgets
 node src/cli.js --pinned tuUsuario --status repo:activo --stack stack.json --out widgets
 node src/cli.js --nixie commits,stars --user tuUsuario --out widgets
+node src/cli.js --banner --text "Hola, soy yo" --out widgets
 ```
 
 Escribe los SVG en `widgets/` e imprime el HTML para tu README. Las opciones
@@ -179,8 +183,10 @@ la variable de entorno `GITHUB_TOKEN`.
 - `stack` Ruta a un `stack.json` en tu repo; genera un bloque por categoría (`stack-<categoría>-dark.svg` y `-light.svg`).
 - `layout` `card` (por defecto), `compact` o `row`.
 - `nixie` Lista de cifras en tubos nixie: `stars` (estrellas de los repos públicos de `user`, sin forks) y `commits` (sus commits del año en curso). Un archivo por cifra: `nixie-stars-dark.svg`, `nixie-commits-dark.svg` y sus `-light.svg`.
-- `user` De quién son las cifras del nixie; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie`.
-- `background` `solid` (por defecto) o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Aplica a todos los widgets; los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
+- `user` De quién son las cifras del nixie, y el texto del banner si no das `text`; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie`.
+- `banner` `true` para el banner pizarrón (`banner-dark.svg` y `-light.svg`).
+- `text` Texto del banner. Si no cabe en 2 líneas, o una palabra no cabe en una, la corrida falla en vez de cortarlo.
+- `background` `solid` o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Sin él, las fichas y el stack llevan caja y los widgets decorativos (banner, nixie) no; si lo das, aplica a todos. Sin caja, los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
 - `out` Carpeta de salida: `widgets` en la Action, `out` en el CLI.
 - `base` Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime; por defecto, la de `out`. Si publicas en la rama `widgets`, es `https://raw.githubusercontent.com/<dueño>/<repo>/widgets`.
 - `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned` y `--nixie`.

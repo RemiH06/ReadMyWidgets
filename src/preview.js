@@ -1,5 +1,6 @@
 // Fichas, stack y nixie de los fixtures (sin red) y todo lo que haya en
-// out/<layout>/, out/stack/ y out/nixie/, más todos sin caja en out/transparent/,
+// out/<layout>/, out/stack/, out/nixie/ y out/banner/, más fichas y stack sin caja
+// en out/transparent/ y nixie y banner con caja en out/solid/,
 // dentro de <img> sobre los fondos de GitHub, en una columna de escritorio y una
 // de teléfono.
 // Para fichas reales: node src/cli.js --repos … --layout <layout> --out out/<layout>
@@ -44,14 +45,18 @@ export const fixtureDeps = () => ({ get: fixtureGet, graphql: fixtureGraphql, ic
 export const FIXTURE_REPOS = ['https://github.com/RemiH06/Ariadne:activo', 'RemiH06/edge'];
 export const FIXTURE_STACK = JSON.parse(readFileSync(new URL('stack.json', FIXTURES), 'utf8'));
 export const FIXTURE_NIXIE = { nixie: ['stars', 'commits'], user: 'RemiH06', year: 2026 };
+export const FIXTURE_BANNER = { banner: true, text: 'Hola, soy Hex: datos y pizarrón' };
 
 if (import.meta.main) {
   // Una columna por forma y tema: escritorio (400) y teléfono (328).
   const sections = [];
+  // nixie y banner salen sin caja por defecto; en `solid`, con ella.
   const extra = {
     stack: { stack: FIXTURE_STACK },
     nixie: FIXTURE_NIXIE,
-    transparent: { repos: FIXTURE_REPOS, stack: FIXTURE_STACK, ...FIXTURE_NIXIE, background: 'transparent' },
+    banner: FIXTURE_BANNER,
+    transparent: { repos: FIXTURE_REPOS, stack: FIXTURE_STACK, background: 'transparent' },
+    solid: { ...FIXTURE_NIXIE, ...FIXTURE_BANNER, background: 'solid' },
   };
   for (const layout of [...Object.keys(LAYOUTS), ...Object.keys(extra)]) {
     mkdirSync(`out/${layout}`, { recursive: true });
