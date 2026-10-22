@@ -18,6 +18,8 @@ export function inputs(env = process.env) {
     user: get('user') || undefined,
     banner: get('banner') === 'true',
     text: get('text') || undefined,
+    iching: get('iching') === 'true',
+    colofon: get('colofon') === 'true',
     background: get('background') || undefined,
     out: get('out') || 'widgets',
     base: get('base') || undefined,

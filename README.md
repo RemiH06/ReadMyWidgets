@@ -55,14 +55,21 @@ sabe, el estado de cada proyecto, lo das tú.
     <td><b>Banner pizarrón</b><br><code>banner: true</code><br>Tu texto (o tu usuario) en gis de doble trazo sobre una rejilla hexagonal, que se escribe al cargar.</td>
     <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/banner/banner-dark.svg"><img src="docs/gallery/banner/banner-light.svg" width="400" alt="RemiH06"></picture></td>
   </tr>
-  <tr><td><b>Hexagramas</b></td><td>En camino: tus contribuciones dibujadas como hexagramas del I Ching.</td></tr>
+  <tr>
+    <td><b>Hexagramas</b><br><code>iching: true</code><br>Tus últimas 52 semanas como hexagramas del I Ching: lunes a viernes son las líneas 1 a 5 y el fin de semana la 6, entera si contribuiste. Al cargar giran hacia la semana más reciente y se enderezan.</td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/iching/iching-dark.svg"><img src="docs/gallery/iching/iching-light.svg" width="400" alt="RemiH06: 52 semanas de contribuciones como hexagramas del I Ching, 20 oct 2025 a 18 oct 2026; 171 de 364 días con contribuciones"></picture></td>
+  </tr>
   <tr><td><b>Matriz de puntos</b></td><td>En camino: matriz tipo Glyph con texto propio, pulso desde el centro o deriva lenta.</td></tr>
   <tr>
     <td><b>Nixie</b><br><code>nixie: commits, stars</code><br>Tus commits del año o las estrellas de tus repos públicos en tubos nixie que recorren sus cátodos al cargar.</td>
-    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-commits-dark.svg"><img src="docs/gallery/nixie/nixie-commits-light.svg" width="400" alt="RemiH06: 797 commits en 2026"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-stars-dark.svg"><img src="docs/gallery/nixie/nixie-stars-light.svg" width="400" alt="RemiH06: 23 estrellas en sus repos públicos"></picture></td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-commits-dark.svg"><img src="docs/gallery/nixie/nixie-commits-light.svg" width="400" alt="RemiH06: 799 commits en 2026"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-stars-dark.svg"><img src="docs/gallery/nixie/nixie-stars-light.svg" width="400" alt="RemiH06: 23 estrellas en sus repos públicos"></picture></td>
   </tr>
   <tr><td><b>Ferrofluido</b></td><td>En camino: mancha de ferrofluido animada, decorativa.</td></tr>
   <tr><td><b>Objeto 3D</b></td><td>En camino: un modelo <code>.glb</code> propio o una bola disco girando lento.</td></tr>
+  <tr>
+    <td><b>Colofón</b><br><code>stack: stack.json</code><br><code>colofon: true</code><br>Tu stack como bandas de logos que corren en loop, una por categoría, cada una teñida de su color.</td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/colofon/colofon-languages-dark.svg"><img src="docs/gallery/colofon/colofon-languages-light.svg" width="400" alt="Languages: Python, Kotlin, Elixir, JavaScript, TypeScript, R, SQL, CQL (Cypher), HTML, CSS"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/colofon/colofon-databases-dark.svg"><img src="docs/gallery/colofon/colofon-databases-light.svg" width="400" alt="Databases: PostgreSQL, PostGIS, MySQL, SQLite, Neo4j, Snowflake, SQLAlchemy"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/colofon/colofon-data-viz-dark.svg"><img src="docs/gallery/colofon/colofon-data-viz-light.svg" width="400" alt="Data &amp; Viz: pandas, NumPy, SciPy, statsmodels, tidyverse, NetworkX, Matplotlib, seaborn, Plotly, Streamlit"></picture></td>
+  </tr>
 </table>
 
 El punto junto al nombre es el estado del proyecto: azul activo, amarillo en
@@ -169,6 +176,8 @@ node src/cli.js --repos tuUsuario/repo:activo,tuUsuario/otro:pausa --layout comp
 node src/cli.js --pinned tuUsuario --status repo:activo --stack stack.json --out widgets
 node src/cli.js --nixie commits,stars --user tuUsuario --out widgets
 node src/cli.js --banner --text "Hola, soy yo" --out widgets
+node src/cli.js --stack stack.json --colofon --out widgets
+node src/cli.js --iching --user tuUsuario --out widgets
 ```
 
 Escribe los SVG en `widgets/` e imprime el HTML para tu README. Las opciones
@@ -181,15 +190,17 @@ la variable de entorno `GITHUB_TOKEN`.
 - `pinned` En lugar de `repos`: los repos fijados de ese usuario u organización, en su orden.
 - `status` Lista de `repo:status` (o `dueño/repo:status`) para los repos que no lo traen, como los de `pinned`. Un nombre que no esté entre los repos es error.
 - `stack` Ruta a un `stack.json` en tu repo; genera un bloque por categoría (`stack-<categoría>-dark.svg` y `-light.svg`).
+- `colofon` `true` para dibujar `stack` como el colofón: una banda de logos en loop por categoría (`colofon-<categoría>-dark.svg` y `-light.svg`) en vez de bloques. Los logos van en la versión de un color de devicon, teñidos con el color de la banda. Cada banda es un SVG y el HTML las apila con `<br>`.
 - `layout` `card` (por defecto), `compact` o `row`.
 - `nixie` Lista de cifras en tubos nixie: `stars` (estrellas de los repos públicos de `user`, sin forks) y `commits` (sus commits del año en curso). Un archivo por cifra: `nixie-stars-dark.svg`, `nixie-commits-dark.svg` y sus `-light.svg`.
-- `user` De quién son las cifras del nixie, y el texto del banner si no das `text`; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie`.
+- `user` De quién son las cifras del nixie y los hexagramas, y el texto del banner si no das `text`; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie` y `--iching`.
 - `banner` `true` para el banner pizarrón (`banner-dark.svg` y `-light.svg`).
 - `text` Texto del banner. Si no cabe en 2 líneas, o una palabra no cabe en una, la corrida falla en vez de cortarlo.
-- `background` `solid` o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Sin él, las fichas y el stack llevan caja y los widgets decorativos (banner, nixie) no; si lo das, aplica a todos. Sin caja, los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
+- `iching` `true` para tus últimas 52 semanas completas (lunes a domingo) como hexagramas del I Ching (`iching-dark.svg` y `-light.svg`). Línea entera si ese día, o ese fin de semana, tuvo al menos una contribución; partida si no.
+- `background` `solid` o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Sin él, las fichas y el stack llevan caja y los widgets decorativos (banner, nixie, hexagramas) no; si lo das, aplica a todos. Sin caja, los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
 - `out` Carpeta de salida: `widgets` en la Action, `out` en el CLI.
 - `base` Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime; por defecto, la de `out`. Si publicas en la rama `widgets`, es `https://raw.githubusercontent.com/<dueño>/<repo>/widgets`.
-- `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned` y `--nixie`.
+- `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned`, `--nixie` e `--iching`.
 
 Si algo falla (un repo que no existe, un `stack.json` mal formado, un widget de
 más de 100 KB), no se escribe ningún archivo, la corrida falla y el mensaje dice

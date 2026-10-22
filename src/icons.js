@@ -5,6 +5,8 @@ import { contrast } from './color.js';
 
 export const DEVICON = 'https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/';
 const VERSIONS = ['original', 'plain'];
+// Para teñir de un color: `plain` es la silueta de un color, con los huecos recortados.
+export const MONO = ['plain', 'original'];
 
 // "C#" → "c#", "Jupyter Notebook" → "jupyternotebook".
 const key = (name) => name.toLowerCase().replace(/[\s_.-]+/g, '');
@@ -31,17 +33,18 @@ export function iconSource(get = (path) => fetchText(DEVICON + path)) {
     );
   }
 
-  async function load(name) {
+  async function load(name, versions) {
     const entry = await find(name);
-    const version = entry && VERSIONS.find((v) => entry.versions.svg.includes(v));
+    const version = entry && versions.find((v) => entry.versions.svg.includes(v));
     if (version) return get(`icons/${entry.name}/${entry.name}-${version}.svg`);
     return readFile(new URL(`../icons/${key(name)}.svg`, import.meta.url), 'utf8').catch(() => null);
   }
 
-  // Texto SVG del ícono o null.
-  return (name) => {
-    if (!cache.has(name)) cache.set(name, load(name));
-    return cache.get(name);
+  // Texto SVG del ícono o null; `versions` es el orden de preferencia.
+  return (name, versions = VERSIONS) => {
+    const k = `${versions}|${name}`;
+    if (!cache.has(k)) cache.set(k, load(name, versions));
+    return cache.get(k);
   };
 }
 

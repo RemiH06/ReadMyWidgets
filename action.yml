@@ -26,7 +26,7 @@ inputs:
     description: 'Cifras en tubos nixie, separadas por coma: stars (estrellas de tus repos públicos, sin forks) y commits (commits del año en curso).'
     required: false
   user:
-    description: Usuario cuyas cifras cuentan los tubos nixie. Por defecto, el dueño del repo donde corre.
+    description: Usuario de los tubos nixie y los hexagramas. Por defecto, el dueño del repo donde corre.
     required: false
     default: ${{ github.repository_owner }}
   banner:
@@ -35,8 +35,14 @@ inputs:
   text:
     description: Texto del banner. Si no cabe en 2 líneas, la Action falla en vez de cortarlo.
     required: false
+  iching:
+    description: 'true para las últimas 52 semanas completas de contribuciones de user como hexagramas del I Ching: lunes a viernes son las líneas 1 a 5 y el fin de semana la 6, entera si hubo contribuciones.'
+    required: false
+  colofon:
+    description: 'true para dibujar stack como el colofón: una banda de logos en loop por categoría, teñidos de un color por banda. El HTML las apila.'
+    required: false
   background:
-    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets. Por defecto, solid en fichas y stack y transparent en banner y nixie.'
+    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets. Por defecto, solid en fichas y stack y transparent en banner, nixie, iching y colofon.'
     required: false
   out:
     description: Carpeta donde se escriben los SVG.

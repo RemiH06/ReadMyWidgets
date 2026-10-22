@@ -2,15 +2,18 @@
 // node src/cli.js --pinned RemiH06 --status tanGo:activo --stack stack.json --out widgets
 // node src/cli.js --nixie stars,commits --user RemiH06 --out widgets
 // node src/cli.js --banner --text "Hola, soy Hex" --out widgets
+// node src/cli.js --iching --user RemiH06 --out widgets
 // La Action llama a `generate` igual que este CLI; solo traduce sus inputs.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import tokens from './tokens.json' with { type: 'json' };
 import { LAYOUTS, W, card, label } from './card.js';
-import { iconSource } from './icons.js';
+import { colofon as drawColofon } from './colofon.js';
+import { MONO, iconSource } from './icons.js';
 import { applyStatus, fetchPinned, fetchRepo, githubFetch, githubGraphql, list, parseRepo, parseStatus } from './repo.js';
 import { banner as drawBanner, label as bannerLabel, lines as bannerLines } from './banner.js';
+import { fetchWeeks, iching as drawIching, label as ichingLabel } from './iching.js';
 import { KINDS, fetchCount, label as nixieLabel, nixie } from './nixie.js';
 import { label as stackLabel, parseStack, stack } from './stack.js';
 import { escapeXml, palette } from './svg.js';
@@ -24,23 +27,27 @@ const BACKGROUNDS = ['solid', 'transparent'];
 //   pinned  usuario u organización cuyos fijados se usan (RF-02)
 //   status  lista de `repo:status` para los repos que no lo traen
 //   stack   el JSON de stack.json ya leído
+//   colofon true para dibujar el stack como bandas de logos en loop, en vez de bloques
 //   nixie   lista de cifras (`stars`, `commits`) de `user`; commits cuenta `year`
 //   banner  true para el banner pizarrón con `text`, o con `user` si no hay texto
+//   iching  true para las últimas 52 semanas de `user` como hexagramas
 //   background  `solid` (caja con fondo) o `transparent` (solo el borde). Sin él,
 //           cada widget lleva el suyo: fichas y stack con caja, los decorativos
-//           (banner, nixie) sin ella
+//           (banner, nixie, iching, colofon) sin ella
 export async function generate(
-  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear(), banner, text, background },
+  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear(), banner, text, iching, colofon, background },
   { get, graphql, icon = iconSource() },
 ) {
   if (!(layout in LAYOUTS)) throw new Error(`layout: "${layout}" no existe; usa ${Object.keys(LAYOUTS).join(', ')}`);
   if (background !== undefined && !BACKGROUNDS.includes(background)) throw new Error(`background: "${background}" no existe; usa ${BACKGROUNDS.join(', ')}`);
   if (repos.length && pinned) throw new Error('usa repos o pinned, no los dos');
-  if (!repos.length && !pinned && stackJson === undefined && !kinds.length && !banner)
-    throw new Error('no hay nada que generar: pasa repos, pinned, stack, nixie o banner');
+  if (colofon && stackJson === undefined) throw new Error('colofon: falta stack, el stack.json cuyas categorías se vuelven bandas');
+  if (!repos.length && !pinned && stackJson === undefined && !kinds.length && !banner && !iching)
+    throw new Error('no hay nada que generar: pasa repos, pinned, stack, nixie, banner o iching');
   for (const kind of kinds) if (!KINDS.includes(kind)) throw new Error(`nixie: "${kind}" no existe; usa ${KINDS.join(', ')}`);
   if (new Set(kinds).size < kinds.length) throw new Error('nixie: hay una cifra repetida');
   if (kinds.length && !user) throw new Error('nixie: falta user, el usuario cuyas cifras se cuentan');
+  if (iching && !user) throw new Error('iching: falta user, el usuario cuyas contribuciones se dibujan');
   if (text !== undefined && !banner) throw new Error('text: es el texto del banner; pasa también banner');
   const bannerText = banner ? (text ?? user) : undefined;
   if (banner && !bannerText) throw new Error('banner: falta text, o user para usar su nombre');
@@ -52,6 +59,8 @@ export async function generate(
   const counts = await Promise.all(
     kinds.map(async (kind) => ({ kind, login: user, year, count: await fetchCount(kind, user, year, graphql) })),
   );
+
+  const hexagrams = iching ? { login: user, weeks: await fetchWeeks(user, graphql) } : undefined;
 
   const files = new Map();
   const widgets = [];
@@ -65,7 +74,8 @@ export async function generate(
       files.set(file, content);
     }
   };
-  const iconsFor = async (names) => new Map(await Promise.all(names.map(async (k) => [k, await icon(k)])));
+  const iconsFor = async (names, versions) =>
+    new Map(await Promise.all(names.map(async (k) => [k, await icon(k, versions)])));
 
   for (const repo of fetched) {
     const name = `card-${repo.name}`;
@@ -74,8 +84,17 @@ export async function generate(
     add(name, (t) => card(repo, t, icons, layout));
     widgets.push({ name, href: repo.url, alt: label(repo) });
   }
-  for (const category of categories) {
-    const icons = await iconsFor(category.items.map((i) => i.icon));
+  for (const [index, category] of categories.entries()) {
+    const names = category.items.map((i) => i.icon);
+    if (colofon) {
+      // Logos de un color, para teñirlos con el gis de la banda.
+      const icons = await iconsFor(names, MONO);
+      const name = `colofon-${category.slug}`;
+      add(name, (t) => drawColofon(category, index, t, icons), 'transparent');
+      widgets.push({ name, alt: stackLabel(category), stacked: true });
+      continue;
+    }
+    const icons = await iconsFor(names);
     const name = `stack-${category.slug}`;
     add(name, (t) => stack(category, t, icons));
     widgets.push({ name, alt: stackLabel(category) });
@@ -89,27 +108,33 @@ export async function generate(
     add('banner', (t) => drawBanner({ text: bannerText }, t), 'transparent');
     widgets.push({ name: 'banner', alt: bannerLabel({ text: bannerText }) });
   }
+  if (hexagrams) {
+    add('iching', (t) => drawIching(hexagrams, t), 'transparent');
+    widgets.push({ name: 'iching', alt: ichingLabel(hexagrams) });
+  }
   return { files, widgets };
 }
 
 // Bloque listo para pegar en el README (RF-05): un `<picture>` por widget que
 // elige el tema de quien ve, dentro de un `<a>` al repo si es ficha. `base` es
-// dónde quedan los SVG vistos desde el README (carpeta o URL).
+// dónde quedan los SVG vistos desde el README (carpeta o URL). Las bandas del
+// colofón (`stacked`) van separadas por `<br>`, para que se apilen aunque quepan dos a lo ancho.
 export function snippet(widgets, base) {
   const src = (w, theme) => escapeXml(`${base.replace(/\/+$/, '')}/${w.name}-${theme}.svg`);
   return widgets
-    .map((w) => {
+    .map((w, i) => {
       const picture =
         `<picture><source media="(prefers-color-scheme: dark)" srcset="${src(w, 'dark')}">` +
         `<img src="${src(w, 'light')}" width="${W}" alt="${escapeXml(w.alt)}"></picture>`;
-      return w.href ? `<a href="${escapeXml(w.href)}">${picture}</a>` : picture;
+      const html = w.href ? `<a href="${escapeXml(w.href)}">${picture}</a>` : picture;
+      return w.stacked && widgets[i + 1]?.stacked ? `${html}<br>` : html;
     })
     .join('\n');
 }
 
 // Lo que hacen igual el CLI y la Action: leer `stack.json` (ruta), generar,
 // escribir en `out` y devolver las rutas escritas y el snippet.
-export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, banner, text, background, out, base }, token) {
+export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, banner, text, iching, colofon, background, out, base }, token) {
   let stackJson;
   if (stackPath) {
     try {
@@ -119,7 +144,7 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, nix
     }
   }
   const { files, widgets } = await generate(
-    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user, banner, text, background },
+    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user, banner, text, iching, colofon, background },
     { get: githubFetch(token), graphql: githubGraphql(token) },
   );
   mkdirSync(out, { recursive: true });
@@ -131,8 +156,9 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, nix
 }
 
 const USAGE = `Uso: node src/cli.js (--repos dueño/repo[:status][,…] | --pinned usuario) [--status repo:status,…]
-                   [--stack stack.json] [--layout card|compact|row] [--nixie stars,commits --user usuario]
-                   [--banner [--text texto]] [--background solid|transparent] [--out carpeta] [--base ruta-o-url]`;
+                   [--stack stack.json [--colofon]] [--layout card|compact|row] [--nixie stars,commits --user usuario]
+                   [--banner [--text texto]] [--iching --user usuario]
+                   [--background solid|transparent] [--out carpeta] [--base ruta-o-url]`;
 
 if (import.meta.main) {
   const { values } = parseArgs({
@@ -146,12 +172,14 @@ if (import.meta.main) {
       user: { type: 'string' },
       banner: { type: 'boolean' },
       text: { type: 'string' },
+      iching: { type: 'boolean' },
+      colofon: { type: 'boolean' },
       background: { type: 'string' },
       out: { type: 'string', default: 'out' },
       base: { type: 'string' },
     },
   });
-  if (!values.repos && !values.pinned && !values.stack && !values.nixie && !values.banner) {
+  if (!values.repos && !values.pinned && !values.stack && !values.nixie && !values.banner && !values.iching) {
     console.error(USAGE);
     process.exit(2);
   }

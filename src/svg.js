@@ -43,7 +43,8 @@ export function palette(theme, transparent = false) {
 
 // Documento SVG autocontenido: fuente incrustada y colores de `t`, una
 // `palette` (RNF-02). `body` ya debe venir escapado; `css` es el estilo propio del widget.
-export function svg({ width, height, t, title, body, css: own = '' }) {
+// Con `frame` en false no hay caja: el widget dibuja su propio fondo.
+export function svg({ width, height, t, title, body, css: own = '', frame = true }) {
   const css =
     FONT_FACE +
     `text{font-family:'${FAMILY}',sans-serif;fill:${t.text}}` +
@@ -53,7 +54,9 @@ export function svg({ width, height, t, title, body, css: own = '' }) {
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
     `viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(title)}">` +
     `<title>${escapeXml(title)}</title><style>${css}</style>` +
-    `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" ` +
-    `fill="${t.fill}" stroke="${t.border}"/>${body}</svg>\n`
+    (frame
+      ? `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" fill="${t.fill}" stroke="${t.border}"/>`
+      : '') +
+    `${body}</svg>\n`
   );
 }

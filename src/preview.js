@@ -1,6 +1,6 @@
 // Fichas, stack y nixie de los fixtures (sin red) y todo lo que haya en
-// out/<layout>/, out/stack/, out/nixie/ y out/banner/, más fichas y stack sin caja
-// en out/transparent/ y nixie y banner con caja en out/solid/,
+// out/<layout>/, out/stack/, out/nixie/, out/banner/ y out/iching/, más fichas y stack sin caja
+// en out/transparent/ y nixie, banner e iching con caja en out/solid/,
 // dentro de <img> sobre los fondos de GitHub, en una columna de escritorio y una
 // de teléfono.
 // Para fichas reales: node src/cli.js --repos … --layout <layout> --out out/<layout>
@@ -32,7 +32,7 @@ export const fixtureIcon = () =>
 // GraphQL servido desde test/fixtures/api/graphql_<consulta>_<login>.json; un
 // login sin archivo responde como GitHub a uno que no existe.
 export async function fixtureGraphql(query, { login }) {
-  const kind = query.includes('pinnedItems') ? 'pinned' : query.includes('contributionsCollection') ? 'commits' : 'stars';
+  const kind = query.includes('pinnedItems') ? 'pinned' : query.includes('contributionCalendar') ? 'calendar' : query.includes('contributionsCollection') ? 'commits' : 'stars';
   try {
     return JSON.parse(readFileSync(new URL(`api/graphql_${kind}_${login}.json`, FIXTURES), 'utf8'));
   } catch {
@@ -46,6 +46,8 @@ export const FIXTURE_REPOS = ['https://github.com/RemiH06/Ariadne:activo', 'Remi
 export const FIXTURE_STACK = JSON.parse(readFileSync(new URL('stack.json', FIXTURES), 'utf8'));
 export const FIXTURE_NIXIE = { nixie: ['stars', 'commits'], user: 'RemiH06', year: 2026 };
 export const FIXTURE_BANNER = { banner: true, text: 'Hola, soy Hex: datos y pizarrón' };
+export const FIXTURE_ICHING = { iching: true, user: 'RemiH06' };
+export const FIXTURE_COLOFON = { stack: FIXTURE_STACK, colofon: true };
 
 if (import.meta.main) {
   // Una columna por forma y tema: escritorio (400) y teléfono (328).
@@ -55,8 +57,10 @@ if (import.meta.main) {
     stack: { stack: FIXTURE_STACK },
     nixie: FIXTURE_NIXIE,
     banner: FIXTURE_BANNER,
+    iching: FIXTURE_ICHING,
+    colofon: FIXTURE_COLOFON,
     transparent: { repos: FIXTURE_REPOS, stack: FIXTURE_STACK, background: 'transparent' },
-    solid: { ...FIXTURE_NIXIE, ...FIXTURE_BANNER, background: 'solid' },
+    solid: { ...FIXTURE_NIXIE, ...FIXTURE_BANNER, ...FIXTURE_ICHING, ...FIXTURE_COLOFON, background: 'solid' },
   };
   for (const layout of [...Object.keys(LAYOUTS), ...Object.keys(extra)]) {
     mkdirSync(`out/${layout}`, { recursive: true });
