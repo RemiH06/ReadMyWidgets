@@ -11,7 +11,7 @@
 ╚═╝  ╚═╝╚═╝     ╚═╝ ╚══╝╚══╝
 
 ReadMyWidgets: widgets en SVG para tu README de perfil
-by Hex (@RemiH06)          version 0.0.0
+by Hex (@RemiH06)          version 1.0.0
 ```
 
 ![MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)

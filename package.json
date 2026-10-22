@@ -1,6 +1,6 @@
 {
   "name": "readmywidgets",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "GitHub Action que genera fichas de repo y bloques de stack en SVG estático para el README de tu perfil.",
   "type": "module",
   "private": true,
