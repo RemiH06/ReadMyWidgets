@@ -92,3 +92,12 @@ test('RF-05, RNF-11: snippet con <picture>, enlace al repo y alt real escapado',
   assert.match(lines[2], /^<picture>.*alt="Lenguajes: Python, TypeScript, JavaScript, Rust, C#, HTML, Shell"/);
   for (const line of lines) assert.doesNotMatch(line, /alt=""/);
 });
+
+test('Action: los inputs de action.yml se traducen a los del CLI', async () => {
+  const { inputs } = await import('../src/action.js');
+  assert.deepEqual(
+    inputs({ INPUT_REPOS: 'RemiH06/Ariadne:activo\nhttps://github.com/RemiH06/tanGo\n', INPUT_STATUS: '', INPUT_LAYOUT: 'row', INPUT_OUT: 'w' }),
+    { repos: ['RemiH06/Ariadne:activo', 'https://github.com/RemiH06/tanGo'], pinned: undefined, status: [], stack: undefined, layout: 'row', out: 'w', base: undefined },
+  );
+  assert.deepEqual(inputs({ INPUT_PINNED: ' RemiH06 ' }), { repos: [], pinned: 'RemiH06', status: [], stack: undefined, layout: 'card', out: 'widgets', base: undefined });
+});

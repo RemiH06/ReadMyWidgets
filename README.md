@@ -31,11 +31,6 @@ texto sobrio y jerarquía clara, para acompañar el resto de tu perfil sin
 competir con él. Los datos salen de la API de GitHub; lo único que GitHub no
 sabe, el estado de cada proyecto, lo das tú.
 
-```diff
-- En desarrollo: por ahora se usa como CLI local; la Action (action.yml) llega en la iteración 3
-- Las fichas son lo único terminado; el bloque de stack y los widgets decorativos están en camino
-```
-
 ## Galería
 
 <table>
@@ -70,25 +65,75 @@ GitHub para cada lenguaje.
 
 ## Instalación
 
-1. Clona el repo; necesitas Node 24 o más reciente y nada más (sin `npm install`).
+1. En el repo de tu perfil (`tuUsuario/tuUsuario`), crea `.github/workflows/widgets.yml`:
 
-   ```bash
-   git clone https://github.com/RemiH06/ReadMyWidgets.git
-   cd ReadMyWidgets
+   ```yaml
+   name: widgets
+
+   # Cada día, al cambiar main o a mano: genera los SVG y los publica en la
+   # rama `widgets`, un solo commit que se reescribe. Si nada cambió, no hay commit.
+   on:
+     schedule:
+       - cron: '23 6 * * *'
+     workflow_dispatch:
+     push:
+       branches: [main]
+
+   permissions:
+     contents: write
+
+   concurrency:
+     group: widgets
+
+   jobs:
+     widgets:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v4
+
+         - uses: RemiH06/ReadMyWidgets@v1
+           with:
+             pinned: ${{ github.repository_owner }}
+             status: |
+               miRepo:activo
+               otroRepo:pausa
+             stack: stack.json
+             layout: compact
+             out: widgets
+             base: https://raw.githubusercontent.com/${{ github.repository }}/widgets
+
+         - name: Publicar en la rama widgets
+           working-directory: widgets
+           run: |
+             git init -q -b widgets
+             git add .
+             git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "widgets: $(date -u +%F)"
+             remote="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+             # Mismo árbol que lo ya publicado: no hay nada que empujar.
+             if git fetch -q --depth=1 "$remote" widgets && [ "$(git rev-parse HEAD^{tree})" = "$(git rev-parse FETCH_HEAD^{tree})" ]; then
+               echo "Sin cambios."
+               exit 0
+             fi
+             git push -qf "$remote" widgets
    ```
 
-2. Genera las fichas de tus repos y, si quieres, tu bloque de stack:
+2. Córrelo una vez a mano (Actions → widgets → Run workflow). En el resumen de
+   la corrida queda el HTML listo para pegar en tu README: un `<picture>` por
+   widget, con versión oscura y clara, enlace al repo y `alt` con su nombre y
+   descripción.
 
-   ```bash
-   node src/cli.js --repos tuUsuario/repo:activo,tuUsuario/otro:pausa --layout compact --out widgets
-   node src/cli.js --pinned tuUsuario --status repo:activo --stack stack.json --out widgets
-   ```
+3. Pega ese HTML en tu README. Desde ahí, cuando cambies la descripción, los
+   lenguajes o los fijados de un repo, la ficha se actualiza sola en la
+   siguiente corrida.
 
-   El CLI escribe los SVG en `widgets/` e imprime el HTML listo para pegar en tu
-   README: un `<picture>` por widget, con versión oscura y clara, enlace al repo
-   y `alt` con su nombre y descripción.
+Si prefieres elegir los repos en vez de usar los fijados, cambia `pinned` por
+`repos`, uno por renglón, cada uno con su status:
 
-3. Sube los SVG a tu repo de perfil y pega el HTML en el README.
+```yaml
+repos: |
+  tuUsuario/miRepo:activo
+  https://github.com/tuUsuario/otroRepo:concluido
+```
 
 `stack.json` es un objeto de categoría → lista de tecnologías, en el orden en
 que quieres verlas. El ícono se busca por nombre en devicon; si el nombre que
@@ -101,21 +146,41 @@ muestras no es el del ícono, dalo aparte:
 }
 ```
 
-Lo que no tiene ícono sale solo con su nombre.
+Lo que no tiene ícono sale solo con su nombre. Un ícono que no se distingue
+del fondo (negro en el tema oscuro, blanco en el claro) se pinta con el color del
+texto; uno que tiene partes oscuras y partes de color, como pandas en el tema
+oscuro, se deja como viene y se reconoce por las partes que sí se ven.
+
+### Sin Action
+
+Con Node 24 o más reciente y nada más (sin `npm install`), el mismo generador
+corre en local:
+
+```bash
+git clone https://github.com/RemiH06/ReadMyWidgets.git
+cd ReadMyWidgets
+node src/cli.js --repos tuUsuario/repo:activo,tuUsuario/otro:pausa --layout compact --out widgets
+node src/cli.js --pinned tuUsuario --status repo:activo --stack stack.json --out widgets
+```
+
+Escribe los SVG en `widgets/` e imprime el HTML para tu README. Las opciones
+son las mismas que los inputs, con `--` (`--repos`, `--pinned`…); el token va en
+la variable de entorno `GITHUB_TOKEN`.
 
 ## Argumentos
 
-- `--repos` Lista separada por comas de `dueño/repo` o `https://github.com/dueño/repo`, cada uno con `:status` opcional: `activo`, `pausa`, `concluido` o `descontinuado` (también `active`, `paused`, `done`, `discontinued`). Sin status, un repo archivado sale como descontinuado.
-- `--pinned` En lugar de `--repos`: los repos fijados de ese usuario u organización, en su orden. Necesita `GITHUB_TOKEN`.
-- `--status` Lista de `repo:status` (o `dueño/repo:status`) para los repos que no lo traen, como los de `--pinned`. Un nombre que no esté entre los repos es error.
-- `--stack` Ruta a un `stack.json`; genera un bloque por categoría (`stack-<categoría>-dark.svg` y `-light.svg`).
-- `--layout` `card` (por defecto), `compact` o `row`.
-- `--out` Carpeta de salida, `out` por defecto.
-- `--base` Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime; por defecto, la de `--out`.
-- `GITHUB_TOKEN` (variable de entorno) Opcional con `--repos` (sin token la API permite 60 peticiones por hora); obligatorio con `--pinned`, porque la API GraphQL no responde sin token.
+- `repos` Lista de `dueño/repo` o `https://github.com/dueño/repo`, uno por renglón o separados por coma, cada uno con `:status` opcional: `activo`, `pausa`, `concluido` o `descontinuado` (también `active`, `paused`, `done`, `discontinued`). Sin status, un repo archivado sale como descontinuado.
+- `pinned` En lugar de `repos`: los repos fijados de ese usuario u organización, en su orden.
+- `status` Lista de `repo:status` (o `dueño/repo:status`) para los repos que no lo traen, como los de `pinned`. Un nombre que no esté entre los repos es error.
+- `stack` Ruta a un `stack.json` en tu repo; genera un bloque por categoría (`stack-<categoría>-dark.svg` y `-light.svg`).
+- `layout` `card` (por defecto), `compact` o `row`.
+- `out` Carpeta de salida: `widgets` en la Action, `out` en el CLI.
+- `base` Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime; por defecto, la de `out`. Si publicas en la rama `widgets`, es `https://raw.githubusercontent.com/<dueño>/<repo>/widgets`.
+- `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned`.
 
 Si algo falla (un repo que no existe, un `stack.json` mal formado, un widget de
-más de 100 KB), no se escribe ningún archivo y el mensaje dice cuál entrada y por qué.
+más de 100 KB), no se escribe ningún archivo, la corrida falla y el mensaje dice
+cuál entrada y por qué.
 
 ## Características
 
@@ -128,7 +193,6 @@ más de 100 KB), no se escribe ningún archivo y el mensaje dice cuál entrada y
 
 ## Funciones futuras
 
-- La Action (`uses: RemiH06/ReadMyWidgets@v1`), para que tu perfil se actualice solo.
 - Los widgets decorativos de la galería.
 
 ## Créditos
