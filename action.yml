@@ -42,7 +42,13 @@ inputs:
     description: 'Modos de la matriz Glyph (los 489 LEDs del Nothing Phone 3), separados por coma: text (text, o user, en letras de 5×5 que corren si no caben), pulse (una onda que sale del centro) y fluid (manchas de luz que derivan). Un archivo por modo.'
     required: false
   ferrofluid:
-    description: 'true para el ferrofluido: bandas de luz que fluyen y se cruzan como cáusticas, sin datos.'
+    description: 'true para el ferrofluido: una mancha negra en un plato redondo que se estira y se junta como sobre un imán, sin datos. No lleva caja.'
+    required: false
+  model:
+    description: 'Objeto 3D girando despacio: discoball (bola disco de espejos), o la ruta en tu repo de un .glb sin compresión (sin Draco, meshopt ni cuantización), sombreado plano y en cuadros. Si el .glb no cabe en 100 KB, la Action falla y dice cuántos triángulos caben.'
+    required: false
+  frames:
+    description: 'Cuadros por vuelta del .glb de model, de 4 a 72. Por defecto 24. Más cuadros giran más suave y pesan más.'
     required: false
   colofon:
     description: 'true para dibujar stack como el colofón: una banda de logos en loop por categoría, teñidos de un color por banda. El HTML las apila.'
@@ -52,7 +58,7 @@ inputs:
     required: false
     default: 'true'
   background:
-    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets. Por defecto, solid en fichas y stack y transparent en banner, nixie, iching, colofon, matrix y ferrofluid.'
+    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets. Por defecto, solid en fichas y stack y transparent en banner, nixie, iching, colofon y matrix. El ferrofluido no lleva caja.'
     required: false
   out:
     description: Carpeta donde se escriben los SVG.

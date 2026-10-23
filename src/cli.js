@@ -5,6 +5,7 @@
 // node src/cli.js --iching --user RemiH06 --out widgets
 // node src/cli.js --matrix text,pulse,fluid --text "Hola" --out widgets
 // node src/cli.js --ferrofluid --out widgets
+// node src/cli.js --model discoball --out widgets
 // La Action llama a `generate` igual que este CLI; solo traduce sus inputs.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,6 +15,7 @@ import { LAYOUTS, W, card, label } from './card.js';
 import { colofon as drawColofon } from './colofon.js';
 import { LABEL as ferroLabel, ferro } from './ferro.js';
 import { MONO, iconSource } from './icons.js';
+import { label as modelLabel, loadModel, model as drawModel } from './model.js';
 import { applyStatus, fetchPinned, fetchRepo, githubFetch, githubGraphql, list, parseRepo, parseStatus } from './repo.js';
 import { banner as drawBanner, label as bannerLabel, lines as bannerLines } from './banner.js';
 import { fetchWeeks, iching as drawIching, label as ichingLabel } from './iching.js';
@@ -39,11 +41,14 @@ const BACKGROUNDS = ['solid', 'transparent'];
 //   matrix  lista de modos de la matriz Glyph (`text`, `pulse`, `fluid`); `text` usa
 //           `text`, o `user` si no hay texto
 //   ferrofluid  true para el ferrofluido (bandas de luz, sin datos)
+//   model   `discoball` o la ruta de un .glb sin compresión, cuyo contenido va en `glb`;
+//           `frames` son los cuadros por vuelta del .glb (por defecto 24)
 //   background  `solid` (caja con fondo) o `transparent` (solo el borde). Sin él,
 //           cada widget lleva el suyo: fichas y stack con caja, los decorativos
-//           (banner, nixie, iching, colofon, matrix, ferrofluid) sin ella
+//           (banner, nixie, iching, colofon, matrix) sin ella; ferrofluid no
+//           lleva caja, su contenedor es el plato
 export async function generate(
-  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear(), banner, text, iching, colofon, names: showNames = true, matrix: modes = [], ferrofluid, background },
+  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear(), banner, text, iching, colofon, names: showNames = true, matrix: modes = [], ferrofluid, model: modelSource, glb, frames, background },
   { get, graphql, icon = iconSource() },
 ) {
   if (!(layout in LAYOUTS)) throw new Error(`layout: "${layout}" no existe; usa ${Object.keys(LAYOUTS).join(', ')}`);
@@ -51,8 +56,8 @@ export async function generate(
   if (repos.length && pinned) throw new Error('usa repos o pinned, no los dos');
   if (colofon && stackJson === undefined) throw new Error('colofon: falta stack, el stack.json cuyas categorías se vuelven bandas');
   if (!showNames && stackJson === undefined) throw new Error('names: solo aplica a los íconos de stack; pasa también stack');
-  if (!repos.length && !pinned && stackJson === undefined && !kinds.length && !banner && !iching && !modes.length && !ferrofluid)
-    throw new Error('no hay nada que generar: pasa repos, pinned, stack, nixie, banner, iching, matrix o ferrofluid');
+  if (!repos.length && !pinned && stackJson === undefined && !kinds.length && !banner && !iching && !modes.length && !ferrofluid && !modelSource)
+    throw new Error('no hay nada que generar: pasa repos, pinned, stack, nixie, banner, iching, matrix, ferrofluid o model');
   for (const kind of kinds) if (!KINDS.includes(kind)) throw new Error(`nixie: "${kind}" no existe; usa ${KINDS.join(', ')}`);
   if (new Set(kinds).size < kinds.length) throw new Error('nixie: hay una cifra repetida');
   if (kinds.length && !user) throw new Error('nixie: falta user, el usuario cuyas cifras se cuentan');
@@ -65,6 +70,8 @@ export async function generate(
   if (banner) bannerLines(bannerText);
   if (modes.includes('text') && !(text ?? user)) throw new Error('matrix: falta text, o user para usar su nombre');
   const matrixText = modes.includes('text') ? glyphText(text ?? user) : undefined;
+  if (frames !== undefined && (!modelSource || modelSource === 'discoball')) throw new Error('frames: solo aplica a un model .glb');
+  const object = modelSource ? loadModel(modelSource, glb, frames) : undefined;
   const categories = stackJson === undefined ? [] : parseStack(stackJson);
   const statusMap = parseStatus(status);
   const targets = applyStatus(pinned ? await fetchPinned(pinned, graphql) : repos.map(parseRepo), statusMap);
@@ -134,6 +141,10 @@ export async function generate(
     add('ferrofluid', ferro, 'transparent');
     widgets.push({ name: 'ferrofluid', alt: ferroLabel });
   }
+  if (object) {
+    add(`model-${object.name}`, (t) => drawModel(object, t), 'transparent');
+    widgets.push({ name: `model-${object.name}`, alt: modelLabel(object) });
+  }
   return { files, widgets };
 }
 
@@ -156,7 +167,7 @@ export function snippet(widgets, base) {
 
 // Lo que hacen igual el CLI y la Action: leer `stack.json` (ruta), generar,
 // escribir en `out` y devolver las rutas escritas y el snippet.
-export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, banner, text, iching, colofon, names, matrix, ferrofluid, background, out, base }, token) {
+export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, banner, text, iching, colofon, names, matrix, ferrofluid, model, frames, background, out, base }, token) {
   let stackJson;
   if (stackPath) {
     try {
@@ -165,8 +176,16 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, nix
       throw new Error(`stack: no se pudo leer ${stackPath}: ${err.message}`);
     }
   }
+  let glb;
+  if (model && model !== 'discoball') {
+    try {
+      glb = readFileSync(model);
+    } catch (err) {
+      throw new Error(`model: no se pudo leer ${model}: ${err.message}`);
+    }
+  }
   const { files, widgets } = await generate(
-    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user, banner, text, iching, colofon, names, matrix, ferrofluid, background },
+    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user, banner, text, iching, colofon, names, matrix, ferrofluid, model, glb, frames, background },
     { get: githubFetch(token), graphql: githubGraphql(token) },
   );
   mkdirSync(out, { recursive: true });
@@ -180,6 +199,7 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, nix
 const USAGE = `Uso: node src/cli.js (--repos dueño/repo[:status][,…] | --pinned usuario) [--status repo:status,…]
                    [--stack stack.json [--colofon] [--no-names]] [--layout card|compact|row] [--nixie stars,commits --user usuario]
                    [--banner [--text texto]] [--iching --user usuario] [--matrix text,pulse,fluid] [--ferrofluid]
+                   [--model discoball|modelo.glb [--frames 24]]
                    [--background solid|transparent] [--out carpeta] [--base ruta-o-url]`;
 
 if (import.meta.main) {
@@ -200,18 +220,20 @@ if (import.meta.main) {
       names: { type: 'boolean', default: true },
       matrix: { type: 'string' },
       ferrofluid: { type: 'boolean' },
+      model: { type: 'string' },
+      frames: { type: 'string' },
       background: { type: 'string' },
       out: { type: 'string', default: 'out' },
       base: { type: 'string' },
     },
   });
-  if (!values.repos && !values.pinned && !values.stack && !values.nixie && !values.banner && !values.iching && !values.matrix && !values.ferrofluid) {
+  if (!values.repos && !values.pinned && !values.stack && !values.nixie && !values.banner && !values.iching && !values.matrix && !values.ferrofluid && !values.model) {
     console.error(USAGE);
     process.exit(2);
   }
   try {
     const { paths, html } = await run(
-      { ...values, repos: list(values.repos), status: list(values.status), nixie: list(values.nixie), matrix: list(values.matrix) },
+      { ...values, repos: list(values.repos), status: list(values.status), nixie: list(values.nixie), matrix: list(values.matrix), frames: values.frames === undefined ? undefined : Number(values.frames) },
       process.env.GITHUB_TOKEN,
     );
     console.error(paths.join('\n'));

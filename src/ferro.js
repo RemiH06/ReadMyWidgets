@@ -22,14 +22,16 @@ const SEED = 0xfe770;
 const DROPS = 7; // pocas gotas: el filtro se repinta en cada cuadro
 const BLUR = 8; // stdDeviation del desenfoque
 // Alfa del campo → alfa visible, en pasos de 0.1. Cuerpo: de 0.3 para arriba,
-// con un paso suave para que el borde no salga dentado. Brillo: banda en 0.6.
+// con un paso suave para que el borde no salga dentado. Brillo: la forma de
+// 0.6 para arriba (un poco adentro del borde) menos ella misma corrida en
+// contra de la luz: queda una media luna del lado de arriba a la izquierda.
 const BODY = '0 0 0 1 1 1 1 1 1 1 1';
-const SHINE = '0 0 0 0 0 0 1 0 0 0 0';
-const SHIFT = -3; // el brillo, corrido hacia la luz (arriba a la izquierda)
+const INNER = '0 0 0 0 0 0 1 1 1 1 1';
+const SHIFT = 3;
 // Alcance de una gota desde el centro: órbita + epiciclo + radio.
-const ORBIT = [10, 34];
-const EPI = [8, 24];
-const RADIUS = [14, 24];
+const ORBIT = [24, 44];
+const EPI = [10, 26];
+const RADIUS = [10, 18];
 const REACH = ORBIT[1] + EPI[1] + RADIUS[1];
 
 const between = (rand, [lo, hi]) => lo + (hi - lo) * rand();
@@ -56,9 +58,9 @@ export function ferro(t) {
     `<filter id="f" filterUnits="userSpaceOnUse" x="${-m}" y="${-m}" width="${2 * m}" height="${2 * m}" color-interpolation-filters="sRGB">` +
     `<feGaussianBlur stdDeviation="${BLUR}" result="b"/>` +
     `<feComponentTransfer in="b" result="body"><feFuncA type="table" tableValues="${BODY}"/></feComponentTransfer>` +
-    `<feOffset in="b" dx="${SHIFT}" dy="${SHIFT}" result="o"/>` +
-    `<feComponentTransfer in="o" result="band"><feFuncA type="table" tableValues="${SHINE}"/></feComponentTransfer>` +
-    `<feFlood flood-color="${f.shine}"/><feComposite in2="band" operator="in"/><feComposite in2="body" operator="in" result="s"/>` +
+    `<feComponentTransfer in="b" result="i"><feFuncA type="table" tableValues="${INNER}"/></feComponentTransfer>` +
+    `<feOffset dx="${SHIFT}" dy="${SHIFT}" result="o"/><feComposite in="i" in2="o" operator="out" result="c"/>` +
+    `<feFlood flood-color="${f.shine}"/><feComposite in2="c" operator="in" result="s"/>` +
     `<feMerge><feMergeNode in="body"/><feMergeNode in="s"/></feMerge></filter>`;
   const body =
     `<defs>${filter}</defs>` +

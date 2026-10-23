@@ -23,6 +23,8 @@ export function inputs(env = process.env) {
     names: get('names') !== 'false',
     matrix: list(get('matrix')),
     ferrofluid: get('ferrofluid') === 'true',
+    model: get('model') || undefined,
+    frames: get('frames') ? Number(get('frames')) : undefined,
     background: get('background') || undefined,
     out: get('out') || 'widgets',
     base: get('base') || undefined,
