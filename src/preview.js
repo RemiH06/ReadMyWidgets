@@ -1,5 +1,5 @@
 // Fichas, stack y nixie de los fixtures (sin red) y todo lo que haya en
-// out/<layout>/, out/stack/, out/nixie/, out/banner/, out/iching/ y out/matrix/, más fichas y stack sin caja
+// out/<layout>/, out/stack/, out/nixie/, out/banner/, out/iching/, out/matrix/ y out/ferrofluid/, más fichas y stack sin caja
 // en out/transparent/ y nixie, banner e iching con caja en out/solid/,
 // dentro de <img> sobre los fondos de GitHub, en una columna de escritorio y una
 // de teléfono.
@@ -49,6 +49,7 @@ export const FIXTURE_BANNER = { banner: true, text: 'Hola, soy Hex: datos y piza
 export const FIXTURE_ICHING = { iching: true, user: 'RemiH06' };
 export const FIXTURE_COLOFON = { stack: FIXTURE_STACK, colofon: true };
 export const FIXTURE_MATRIX = { matrix: ['text', 'pulse', 'fluid'], text: 'Hola, soy Hex' };
+export const FIXTURE_FERRO = { ferrofluid: true };
 
 if (import.meta.main) {
   // Una columna por forma y tema: escritorio (400) y teléfono (328).
@@ -61,8 +62,9 @@ if (import.meta.main) {
     iching: FIXTURE_ICHING,
     colofon: FIXTURE_COLOFON,
     matrix: FIXTURE_MATRIX,
+    ferrofluid: FIXTURE_FERRO,
     transparent: { repos: FIXTURE_REPOS, stack: FIXTURE_STACK, background: 'transparent' },
-    solid: { ...FIXTURE_NIXIE, ...FIXTURE_BANNER, ...FIXTURE_ICHING, ...FIXTURE_COLOFON, matrix: ['pulse'], background: 'solid' },
+    solid: { ...FIXTURE_NIXIE, ...FIXTURE_BANNER, ...FIXTURE_ICHING, ...FIXTURE_COLOFON, matrix: ['pulse'], ...FIXTURE_FERRO, background: 'solid' },
   };
   for (const layout of [...Object.keys(LAYOUTS), ...Object.keys(extra)]) {
     mkdirSync(`out/${layout}`, { recursive: true });

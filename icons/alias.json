@@ -1,0 +1,10 @@
+{
+  "CQL (Cypher)": "neo4j",
+  "Cypher": "neo4j",
+  "Ray RLlib": "ray",
+  "RLlib": "ray",
+  "YOLO": "ultralytics",
+  "Claude Code": "claude",
+  "Claude": "claude",
+  "Parselmouth": "praat"
+}

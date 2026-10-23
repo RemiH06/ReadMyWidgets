@@ -41,11 +41,18 @@ inputs:
   matrix:
     description: 'Modos de la matriz Glyph (los 489 LEDs del Nothing Phone 3), separados por coma: text (text, o user, en letras de 5×5 que corren si no caben), pulse (una onda que sale del centro) y fluid (manchas de luz que derivan). Un archivo por modo.'
     required: false
+  ferrofluid:
+    description: 'true para el ferrofluido: bandas de luz que fluyen y se cruzan como cáusticas, sin datos.'
+    required: false
   colofon:
     description: 'true para dibujar stack como el colofón: una banda de logos en loop por categoría, teñidos de un color por banda. El HTML las apila.'
     required: false
+  names:
+    description: 'false para que el stack y el colofón muestren solo los íconos, sin el nombre al lado. La tecnología que no tiene ícono conserva su nombre, y todos siguen en el texto alternativo.'
+    required: false
+    default: 'true'
   background:
-    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets. Por defecto, solid en fichas y stack y transparent en banner, nixie, iching, colofon y matrix.'
+    description: 'solid (caja con fondo) o transparent (solo el borde; lo de adentro queda sobre el fondo de GitHub). Aplica a todos los widgets. Por defecto, solid en fichas y stack y transparent en banner, nixie, iching, colofon, matrix y ferrofluid.'
     required: false
   out:
     description: Carpeta donde se escriben los SVG.

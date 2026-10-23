@@ -144,7 +144,8 @@ for (const [layout, svg, file] of Object.entries(byLayout).flatMap(([l, fs]) => 
   });
 
   test(`${file}: cada ícono tiene un color que se distingue del fondo (RNF-03)`, () => {
-    for (const icon of images(svg)) {
+    // Los PNG de icons/ tienen su propia prueba (icons.test.js).
+    for (const icon of images(svg).filter((i) => !i.includes('data:image/png'))) {
       const best = Math.max(...iconColors(icon).map((c) => contrast(c, t.bg)));
       assert.ok(best >= 3, `${iconColors(icon)} sobre ${t.bg}: ${best.toFixed(2)}`);
     }

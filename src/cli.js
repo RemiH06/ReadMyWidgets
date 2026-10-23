@@ -4,6 +4,7 @@
 // node src/cli.js --banner --text "Hola, soy Hex" --out widgets
 // node src/cli.js --iching --user RemiH06 --out widgets
 // node src/cli.js --matrix text,pulse,fluid --text "Hola" --out widgets
+// node src/cli.js --ferrofluid --out widgets
 // La Action llama a `generate` igual que este CLI; solo traduce sus inputs.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,6 +12,7 @@ import { parseArgs } from 'node:util';
 import tokens from './tokens.json' with { type: 'json' };
 import { LAYOUTS, W, card, label } from './card.js';
 import { colofon as drawColofon } from './colofon.js';
+import { LABEL as ferroLabel, ferro } from './ferro.js';
 import { MONO, iconSource } from './icons.js';
 import { applyStatus, fetchPinned, fetchRepo, githubFetch, githubGraphql, list, parseRepo, parseStatus } from './repo.js';
 import { banner as drawBanner, label as bannerLabel, lines as bannerLines } from './banner.js';
@@ -30,24 +32,27 @@ const BACKGROUNDS = ['solid', 'transparent'];
 //   status  lista de `repo:status` para los repos que no lo traen
 //   stack   el JSON de stack.json ya leído
 //   colofon true para dibujar el stack como bandas de logos en loop, en vez de bloques
+//   names   false para que stack y colofón muestren solo los íconos (por defecto, true)
 //   nixie   lista de cifras (`stars`, `commits`) de `user`; commits cuenta `year`
 //   banner  true para el banner pizarrón con `text`, o con `user` si no hay texto
 //   iching  true para las últimas 52 semanas de `user` como hexagramas
 //   matrix  lista de modos de la matriz Glyph (`text`, `pulse`, `fluid`); `text` usa
 //           `text`, o `user` si no hay texto
+//   ferrofluid  true para el ferrofluido (bandas de luz, sin datos)
 //   background  `solid` (caja con fondo) o `transparent` (solo el borde). Sin él,
 //           cada widget lleva el suyo: fichas y stack con caja, los decorativos
-//           (banner, nixie, iching, colofon, matrix) sin ella
+//           (banner, nixie, iching, colofon, matrix, ferrofluid) sin ella
 export async function generate(
-  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear(), banner, text, iching, colofon, matrix: modes = [], background },
+  { repos = [], pinned, status = [], stack: stackJson, layout = 'card', nixie: kinds = [], user, year = new Date().getUTCFullYear(), banner, text, iching, colofon, names: showNames = true, matrix: modes = [], ferrofluid, background },
   { get, graphql, icon = iconSource() },
 ) {
   if (!(layout in LAYOUTS)) throw new Error(`layout: "${layout}" no existe; usa ${Object.keys(LAYOUTS).join(', ')}`);
   if (background !== undefined && !BACKGROUNDS.includes(background)) throw new Error(`background: "${background}" no existe; usa ${BACKGROUNDS.join(', ')}`);
   if (repos.length && pinned) throw new Error('usa repos o pinned, no los dos');
   if (colofon && stackJson === undefined) throw new Error('colofon: falta stack, el stack.json cuyas categorías se vuelven bandas');
-  if (!repos.length && !pinned && stackJson === undefined && !kinds.length && !banner && !iching && !modes.length)
-    throw new Error('no hay nada que generar: pasa repos, pinned, stack, nixie, banner, iching o matrix');
+  if (!showNames && stackJson === undefined) throw new Error('names: solo aplica a los íconos de stack; pasa también stack');
+  if (!repos.length && !pinned && stackJson === undefined && !kinds.length && !banner && !iching && !modes.length && !ferrofluid)
+    throw new Error('no hay nada que generar: pasa repos, pinned, stack, nixie, banner, iching, matrix o ferrofluid');
   for (const kind of kinds) if (!KINDS.includes(kind)) throw new Error(`nixie: "${kind}" no existe; usa ${KINDS.join(', ')}`);
   if (new Set(kinds).size < kinds.length) throw new Error('nixie: hay una cifra repetida');
   if (kinds.length && !user) throw new Error('nixie: falta user, el usuario cuyas cifras se cuentan');
@@ -98,13 +103,13 @@ export async function generate(
       // Logos de un color, para teñirlos con el gis de la banda.
       const icons = await iconsFor(names, MONO);
       const name = `colofon-${category.slug}`;
-      add(name, (t) => drawColofon(category, index, t, icons), 'transparent');
+      add(name, (t) => drawColofon(category, index, t, icons, showNames), 'transparent');
       widgets.push({ name, alt: stackLabel(category), stacked: true });
       continue;
     }
     const icons = await iconsFor(names);
     const name = `stack-${category.slug}`;
-    add(name, (t) => stack(category, t, icons));
+    add(name, (t) => stack(category, t, icons, showNames));
     widgets.push({ name, alt: stackLabel(category) });
   }
   for (const data of counts) {
@@ -124,6 +129,10 @@ export async function generate(
     const data = { mode, text: mode === 'text' ? matrixText : undefined };
     add(`matrix-${mode}`, (t) => drawMatrix(data, t), 'transparent');
     widgets.push({ name: `matrix-${mode}`, alt: matrixLabel(data) });
+  }
+  if (ferrofluid) {
+    add('ferrofluid', ferro, 'transparent');
+    widgets.push({ name: 'ferrofluid', alt: ferroLabel });
   }
   return { files, widgets };
 }
@@ -147,7 +156,7 @@ export function snippet(widgets, base) {
 
 // Lo que hacen igual el CLI y la Action: leer `stack.json` (ruta), generar,
 // escribir en `out` y devolver las rutas escritas y el snippet.
-export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, banner, text, iching, colofon, matrix, background, out, base }, token) {
+export async function run({ repos, pinned, status, stack: stackPath, layout, nixie: kinds, user, banner, text, iching, colofon, names, matrix, ferrofluid, background, out, base }, token) {
   let stackJson;
   if (stackPath) {
     try {
@@ -157,7 +166,7 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, nix
     }
   }
   const { files, widgets } = await generate(
-    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user, banner, text, iching, colofon, matrix, background },
+    { repos, pinned, status, stack: stackJson, layout, nixie: kinds, user, banner, text, iching, colofon, names, matrix, ferrofluid, background },
     { get: githubFetch(token), graphql: githubGraphql(token) },
   );
   mkdirSync(out, { recursive: true });
@@ -169,12 +178,13 @@ export async function run({ repos, pinned, status, stack: stackPath, layout, nix
 }
 
 const USAGE = `Uso: node src/cli.js (--repos dueño/repo[:status][,…] | --pinned usuario) [--status repo:status,…]
-                   [--stack stack.json [--colofon]] [--layout card|compact|row] [--nixie stars,commits --user usuario]
-                   [--banner [--text texto]] [--iching --user usuario] [--matrix text,pulse,fluid]
+                   [--stack stack.json [--colofon] [--no-names]] [--layout card|compact|row] [--nixie stars,commits --user usuario]
+                   [--banner [--text texto]] [--iching --user usuario] [--matrix text,pulse,fluid] [--ferrofluid]
                    [--background solid|transparent] [--out carpeta] [--base ruta-o-url]`;
 
 if (import.meta.main) {
   const { values } = parseArgs({
+    allowNegative: true,
     options: {
       repos: { type: 'string' },
       pinned: { type: 'string' },
@@ -187,13 +197,15 @@ if (import.meta.main) {
       text: { type: 'string' },
       iching: { type: 'boolean' },
       colofon: { type: 'boolean' },
+      names: { type: 'boolean', default: true },
       matrix: { type: 'string' },
+      ferrofluid: { type: 'boolean' },
       background: { type: 'string' },
       out: { type: 'string', default: 'out' },
       base: { type: 'string' },
     },
   });
-  if (!values.repos && !values.pinned && !values.stack && !values.nixie && !values.banner && !values.iching && !values.matrix) {
+  if (!values.repos && !values.pinned && !values.stack && !values.nixie && !values.banner && !values.iching && !values.matrix && !values.ferrofluid) {
     console.error(USAGE);
     process.exit(2);
   }

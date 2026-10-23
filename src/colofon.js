@@ -17,20 +17,26 @@ const ICON = 22;
 const BODY = 15; // 12.3 px en un teléfono (RNF-10)
 const MARK = 6; // de logo a nombre
 const GAP = 30; // entre logos
+const SOLO_GAP = 22; // entre logos sin nombre
 const PILL = 26;
 const FADE = 0.09; // desvanecido en cada extremo, como el de lambda
 // Orden de los colores del colofón de lambda: azul, cian, verde, violeta,
 // amarillo, naranja, rosa, rojo (índices de `tokens.chalk`).
 const ORDER = [0, 7, 2, 4, 1, 5, 3, 6];
 
-// Un renglón de logos con nombre; `width` es lo que mide una vuelta.
-function sequence(items, icons, t) {
+// Un renglón de logos con nombre; `width` es lo que mide una vuelta. Sin
+// `names`, solo los logos; el que no tiene logo conserva su nombre.
+function sequence(items, icons, t, names) {
   let x = 0;
   const parts = [];
   for (const item of items) {
     const icon = icons.get(item.icon);
     if (icon) {
       parts.push(`<image x="${n(x)}" y="${CY - ICON / 2}" width="${ICON}" height="${ICON}" href="${iconImage(icon, t)}" filter="url(#k)"/>`);
+      if (!names) {
+        x += ICON + SOLO_GAP;
+        continue;
+      }
       x += ICON + MARK;
     }
     const name = truncate(item.name, BODY, W / 2);
@@ -41,13 +47,13 @@ function sequence(items, icons, t) {
 }
 
 // `index` es la posición de la categoría: decide color, inclinación y sentido.
-// `icons` es un Map de `icon` → texto SVG o null.
-export function colofon(category, index, t, icons) {
+// `icons` es un Map de `icon` → texto SVG o null; `names` en false deja solo los logos.
+export function colofon(category, index, t, icons, names = true) {
   const ink = tokens.chalk[t.theme][ORDER[index % ORDER.length]];
   const tilt = index % 2 ? 1 : -1;
   const dir = index % 2 ? -1 : 1;
   const speed = 38 + (index % 3) * 9; // px/s, como lambda
-  const seq = sequence(category.items, icons, t);
+  const seq = sequence(category.items, icons, t, names);
   const tag = truncate(category.name, BODY, W / 2);
   const pw = n(22 + measure(tag, BODY) + 14);
   // El renglón arranca después de la píldora: quieto, se ve desde el primer logo.

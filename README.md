@@ -48,7 +48,7 @@ sabe, el estado de cada proyecto, lo das tú.
     <td><a href="https://github.com/RemiH06/mapoDoufu"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/row/card-mapoDoufu-dark.svg"><img src="docs/gallery/row/card-mapoDoufu-light.svg" width="400" alt="mapoDoufu: Sistema de apoyo a decisiones basado en datos abiertos de México (activo)"></picture></a><br><a href="https://github.com/RemiH06/SaveTrack"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/row/card-SaveTrack-dark.svg"><img src="docs/gallery/row/card-SaveTrack-light.svg" width="400" alt="SaveTrack: Financial organization app (concluido)"></picture></a><br><a href="https://github.com/RemiH06/Ariadne"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/row/card-Ariadne-dark.svg"><img src="docs/gallery/row/card-Ariadne-light.svg" width="400" alt="Ariadne: Documentation graph generator for any project with any tools. (activo)"></picture></a></td>
   </tr>
   <tr>
-    <td><b>Bloque de stack</b><br><code>stack: stack.json</code><br>Un bloque por categoría, con ícono y nombre de cada tecnología en el orden que le des.</td>
+    <td><b>Bloque de stack</b><br><code>stack: stack.json</code><br><code>names: false</code><br>Un bloque por categoría con el ícono de cada tecnología, en el orden que le des. Sin <code>names: false</code>, cada ícono lleva su nombre al lado.</td>
     <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/stack/stack-languages-dark.svg"><img src="docs/gallery/stack/stack-languages-light.svg" width="400" alt="Languages: Python, Kotlin, Elixir, JavaScript, TypeScript, R, SQL, CQL (Cypher), HTML, CSS"></picture></td>
   </tr>
   <tr>
@@ -67,10 +67,13 @@ sabe, el estado de cada proyecto, lo das tú.
     <td><b>Nixie</b><br><code>nixie: commits, stars</code><br>Tus commits del año o las estrellas de tus repos públicos en tubos nixie que recorren sus cátodos al cargar.</td>
     <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-commits-dark.svg"><img src="docs/gallery/nixie/nixie-commits-light.svg" width="400" alt="RemiH06: 799 commits en 2026"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/nixie/nixie-stars-dark.svg"><img src="docs/gallery/nixie/nixie-stars-light.svg" width="400" alt="RemiH06: 23 estrellas en sus repos públicos"></picture></td>
   </tr>
-  <tr><td><b>Ferrofluido</b></td><td>En camino: mancha de ferrofluido animada, decorativa.</td></tr>
+  <tr>
+    <td><b>Ferrofluido</b><br><code>ferrofluid: true</code><br>Decorativo, sin datos: gotas que se funden y separan, de las que solo se ven dos bandas de luz en su contorno. Tres manchas, una por color, cuyas bandas se cruzan como cáusticas.</td>
+    <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/ferrofluid/ferrofluid-dark.svg"><img src="docs/gallery/ferrofluid/ferrofluid-light.svg" width="400" alt="Ferrofluido: bandas de luz que fluyen y se cruzan como cáusticas"></picture></td>
+  </tr>
   <tr><td><b>Objeto 3D</b></td><td>En camino: un modelo <code>.glb</code> propio o una bola disco girando lento.</td></tr>
   <tr>
-    <td><b>Colofón</b><br><code>stack: stack.json</code><br><code>colofon: true</code><br>Tu stack como bandas de logos que corren en loop, una por categoría, cada una teñida de su color.</td>
+    <td><b>Colofón</b><br><code>stack: stack.json</code><br><code>colofon: true</code><br><code>names: false</code><br>Tu stack como bandas de logos que corren en loop, una por categoría, cada una teñida de su color. Sin <code>names: false</code>, cada logo lleva su nombre al lado.</td>
     <td><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/colofon/colofon-languages-dark.svg"><img src="docs/gallery/colofon/colofon-languages-light.svg" width="400" alt="Languages: Python, Kotlin, Elixir, JavaScript, TypeScript, R, SQL, CQL (Cypher), HTML, CSS"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/colofon/colofon-databases-dark.svg"><img src="docs/gallery/colofon/colofon-databases-light.svg" width="400" alt="Databases: PostgreSQL, PostGIS, MySQL, SQLite, Neo4j, Snowflake, SQLAlchemy"></picture><br><picture><source media="(prefers-color-scheme: dark)" srcset="docs/gallery/colofon/colofon-data-viz-dark.svg"><img src="docs/gallery/colofon/colofon-data-viz-light.svg" width="400" alt="Data &amp; Viz: pandas, NumPy, SciPy, statsmodels, tidyverse, NetworkX, Matplotlib, seaborn, Plotly, Streamlit"></picture></td>
   </tr>
 </table>
@@ -182,6 +185,7 @@ node src/cli.js --banner --text "Hola, soy yo" --out widgets
 node src/cli.js --stack stack.json --colofon --out widgets
 node src/cli.js --iching --user tuUsuario --out widgets
 node src/cli.js --matrix text,pulse --text "Hola" --out widgets
+node src/cli.js --ferrofluid --out widgets
 ```
 
 Escribe los SVG en `widgets/` e imprime el HTML para tu README. Las opciones
@@ -195,14 +199,16 @@ la variable de entorno `GITHUB_TOKEN`.
 - `status` Lista de `repo:status` (o `dueño/repo:status`) para los repos que no lo traen, como los de `pinned`. Un nombre que no esté entre los repos es error.
 - `stack` Ruta a un `stack.json` en tu repo; genera un bloque por categoría (`stack-<categoría>-dark.svg` y `-light.svg`).
 - `colofon` `true` para dibujar `stack` como el colofón: una banda de logos en loop por categoría (`colofon-<categoría>-dark.svg` y `-light.svg`) en vez de bloques. Los logos van en la versión de un color de devicon, teñidos con el color de la banda. Cada banda es un SVG y el HTML las apila con `<br>`.
+- `names` `false` para que el stack y el colofón muestren solo los íconos, sin el nombre al lado (en el CLI, `--no-names`). Sin nombres, los íconos del bloque de stack crecen de 18 a 28 px. Una tecnología sin ícono conserva su nombre, y todas siguen en el texto alternativo. Por defecto, `true`.
 - `layout` `card` (por defecto), `compact` o `row`.
 - `nixie` Lista de cifras en tubos nixie: `stars` (estrellas de los repos públicos de `user`, sin forks) y `commits` (sus commits del año en curso). Un archivo por cifra: `nixie-stars-dark.svg`, `nixie-commits-dark.svg` y sus `-light.svg`.
 - `user` De quién son las cifras del nixie y los hexagramas, y el texto del banner y de la matriz si no das `text`; por defecto, el dueño del repo donde corre la Action. En el CLI es obligatorio con `--nixie` y `--iching`.
 - `banner` `true` para el banner pizarrón (`banner-dark.svg` y `-light.svg`).
 - `text` Texto del banner y de la matriz en modo `text`. Si no cabe en 2 líneas del banner, o una palabra no cabe en una, la corrida falla en vez de cortarlo.
 - `matrix` Lista de modos de la matriz Glyph, un archivo por modo (`matrix-text-dark.svg` y `-light.svg`, etc.): `text` (`text`, o `user`, en letras de 5×5; si cabe se queda quieto, si no corre un LED por paso), `pulse` (una onda que sale del centro) y `fluid` (manchas de luz que derivan). Las letras son A-Z, 0-9, espacio y `- . , : ! ?`; los acentos se quitan y cualquier otro carácter hace fallar la corrida.
+- `ferrofluid` `true` para el ferrofluido (`ferrofluid-dark.svg` y `-light.svg`): bandas de luz animadas, sin datos.
 - `iching` `true` para tus últimas 52 semanas completas (lunes a domingo) como hexagramas del I Ching (`iching-dark.svg` y `-light.svg`). Línea entera si ese día, o ese fin de semana, tuvo al menos una contribución; partida si no.
-- `background` `solid` o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Sin él, las fichas y el stack llevan caja y los widgets decorativos (banner, nixie, hexagramas, colofón, matriz) no; si lo das, aplica a todos. Sin caja, los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
+- `background` `solid` o `transparent`: sin relleno en la caja, solo el borde, para que el widget quede sobre el fondo de GitHub. Sin él, las fichas y el stack llevan caja y los widgets decorativos (banner, nixie, hexagramas, colofón, matriz, ferrofluido) no; si lo das, aplica a todos. Sin caja, los colores de lenguaje y de íconos se ajustan contra el fondo de la página en vez del de la caja.
 - `out` Carpeta de salida: `widgets` en la Action, `out` en el CLI.
 - `base` Ruta o URL de los SVG vista desde tu README, para el HTML que se imprime; por defecto, la de `out`. Si publicas en la rama `widgets`, es `https://raw.githubusercontent.com/<dueño>/<repo>/widgets`.
 - `token` Por defecto el `GITHUB_TOKEN` del workflow, que alcanza también para `pinned`. En el CLI es la variable de entorno `GITHUB_TOKEN`: opcional con `--repos` (sin token la API permite 60 peticiones por hora), obligatoria con `--pinned`, `--nixie` e `--iching`.
