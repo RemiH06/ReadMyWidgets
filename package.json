@@ -9,6 +9,6 @@
     "test": "node --test",
     "preview": "node src/preview.js"
   },
-  "author": "Hex (@RemiH06)",
+  "author": "RemLam (@RemiH06)",
   "license": "MIT"
 }
